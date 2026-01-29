@@ -1,0 +1,22 @@
+{
+  "name": "crm-local",
+  "version": "1.0.0",
+  "description": "Local CRM with Customer Management and Invoicing",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build --workspace=@crm-local/shared",
+    "dev": "npm run dev --workspace=@crm-local/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
