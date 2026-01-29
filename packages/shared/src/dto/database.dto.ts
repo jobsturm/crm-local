@@ -1,6 +1,6 @@
 /**
  * Database DTOs - Represents the JSON storage structure
- * 
+ *
  * Storage Layout:
  * /data/
  * ├── database.json          # Main database (customers, business, settings)
@@ -19,7 +19,7 @@ import type { BusinessDto } from './business.dto';
 import type { SettingsDto } from './settings.dto';
 import type { DocumentDto } from './document.dto';
 
-/** 
+/**
  * Main database file schema (excludes documents - stored separately)
  * Stored at: {storagePath}/database.json
  */
@@ -39,7 +39,7 @@ export interface DatabaseDto {
 
 /**
  * Document file schema (one file per offer/invoice)
- * Stored at: 
+ * Stored at:
  *   - {storagePath}/offers/{year}/{documentNumber}.json
  *   - {storagePath}/invoices/{year}/{documentNumber}.json
  */
@@ -118,8 +118,10 @@ export const EMPTY_DATABASE: DatabaseDto = {
       paymentTermsTitleInvoice: 'Payment Terms',
       // Footer
       thankYouText: 'Thank you for your business with {company}!',
-      questionsTextOffer: 'If you have questions about this quote, please contact us at {email} or {phone}.',
-      questionsTextInvoice: 'If you have questions about this invoice, please contact us at {email} or {phone}.',
+      questionsTextOffer:
+        'If you have questions about this quote, please contact us at {email} or {phone}.',
+      questionsTextInvoice:
+        'If you have questions about this invoice, please contact us at {email} or {phone}.',
     },
     theme: 'system',
     dateFormat: 'DD-MM-YYYY',

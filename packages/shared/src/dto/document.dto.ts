@@ -1,6 +1,6 @@
 /**
  * Document DTOs - Shared between Frontend and Backend
- * 
+ *
  * A "Document" can be either an Offer or an Invoice.
  * They share the same structure, making it easy to convert an offer to an invoice.
  */
@@ -8,15 +8,42 @@
 /** Document type - offer (quote) or invoice */
 export type DocumentType = 'offer' | 'invoice';
 
-/** Document status */
-export type DocumentStatus = 
-  | 'draft'      // Not yet sent
-  | 'sent'       // Sent to customer
-  | 'accepted'   // Offer accepted (offers only)
-  | 'rejected'   // Offer rejected (offers only)
-  | 'paid'       // Invoice paid (invoices only)
-  | 'overdue'    // Invoice overdue (invoices only)
-  | 'cancelled'; // Cancelled
+/** Offer status - simpler workflow */
+export type OfferStatus = 'draft' | 'sent' | 'accepted' | 'cancelled';
+
+/** Invoice status - full payment workflow */
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+
+/** Document status - union of both for generic handling */
+export type DocumentStatus = OfferStatus | InvoiceStatus;
+
+/** Valid statuses for offers */
+export const OFFER_STATUSES: OfferStatus[] = ['draft', 'sent', 'accepted', 'cancelled'];
+
+/** Valid statuses for invoices */
+export const INVOICE_STATUSES: InvoiceStatus[] = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
+
+/** Status display labels */
+export const STATUS_LABELS: Record<DocumentStatus, string> = {
+  draft: 'Draft',
+  sent: 'Sent',
+  accepted: 'Accepted',
+  paid: 'Paid',
+  overdue: 'Overdue',
+  cancelled: 'Cancelled',
+};
+
+/** Status tag types for Naive UI */
+export type StatusTagType = 'default' | 'info' | 'success' | 'warning' | 'error';
+
+export const STATUS_TAG_TYPES: Record<DocumentStatus, StatusTagType> = {
+  draft: 'default',
+  sent: 'info',
+  accepted: 'success',
+  paid: 'success',
+  overdue: 'warning',
+  cancelled: 'error',
+};
 
 /** Single line item on a document */
 export interface DocumentItemDto {
@@ -51,13 +78,13 @@ export interface DocumentCustomerSnapshotDto {
 export interface StatusLogEntryDto {
   /** When the status changed */
   timestamp: string; // ISO 8601
-  
+
   /** Previous status (null for initial creation) */
   fromStatus: DocumentStatus | null;
-  
+
   /** New status */
   toStatus: DocumentStatus;
-  
+
   /** Optional note explaining the change */
   note?: string;
 }
@@ -65,57 +92,60 @@ export interface StatusLogEntryDto {
 /** Full document entity */
 export interface DocumentDto {
   id: string;
-  
+
   /** Type of document */
   documentType: DocumentType;
-  
+
   /** Custom title (e.g., "Offerte", "Factuur", "Quote") */
   documentTitle: string;
-  
+
   /** Document number (e.g., "OFF-2026-0001" or "INV-2026-0001") */
   documentNumber: string;
-  
+
   /** Reference to customer in database */
   customerId: string;
-  
+
   /** Snapshot of customer at time of creation (for PDF) */
   customer: DocumentCustomerSnapshotDto;
-  
+
   /** Line items */
   items: DocumentItemDto[];
-  
+
   /** Computed totals (in cents) */
   subtotal: number;
   taxRate: number; // percentage (e.g., 21 for 21%)
   taxAmount: number;
   total: number;
-  
+
   /** Payment term in days (e.g., 14, 30) */
   paymentTermDays: number;
-  
+
   /** Due date (createdAt + paymentTermDays) */
   dueDate: string; // ISO 8601
-  
+
   /** Customizable text fields for PDF */
   introText?: string; // Text before line items
   notesText?: string; // Text after line items (e.g., payment instructions)
   footerText?: string; // Footer text
-  
+
   /** Current status */
   status: DocumentStatus;
-  
-  /** 
+
+  /**
    * Status change history for audit trail and analytics
    * First entry is always the creation (fromStatus: null, toStatus: 'draft')
    */
   statusHistory: StatusLogEntryDto[];
-  
+
   /** Timestamps */
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
-  
+
   /** If this invoice was created from an offer, reference the original */
   convertedFromOfferId?: string;
+
+  /** If this offer was converted to an invoice, reference the result */
+  convertedToInvoiceId?: string;
 }
 
 /** DTO for creating a new document */
@@ -142,6 +172,8 @@ export interface UpdateDocumentDto {
   notesText?: string;
   footerText?: string;
   status?: DocumentStatus;
+  /** Note to add to status history when status changes */
+  statusNote?: string;
 }
 
 /** Summary for list views (without full items) */
@@ -172,12 +204,11 @@ export interface DocumentResponseDto {
 export interface ConvertOfferToInvoiceDto {
   /** The offer ID to convert */
   offerId: string;
-  
+
   /** Optional: update payment terms for the invoice */
   paymentTermDays?: number;
-  
+
   /** Optional: update the notes/footer for invoice */
   notesText?: string;
   footerText?: string;
 }
-

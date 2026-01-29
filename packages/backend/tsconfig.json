@@ -3,10 +3,12 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "paths": {
+      "@crm-local/shared": ["../shared/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/templates/**"]
+  "exclude": ["node_modules", "dist", "tests"],
+  "references": [{ "path": "../shared" }]
 }

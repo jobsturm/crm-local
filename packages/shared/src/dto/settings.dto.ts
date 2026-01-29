@@ -11,50 +11,50 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 /**
  * Customizable labels for PDF documents
  * Users can edit these in settings to use their preferred language/terminology
- * 
+ *
  * Based on the proven PDF template from the prototype
  */
 export interface DocumentLabelsDto {
   // === Document type titles (defaults for new documents) ===
-  offerTitle: string;              // "Offerte" / "Quote"
-  invoiceTitle: string;            // "Factuur" / "Invoice"
+  offerTitle: string; // "Offerte" / "Quote"
+  invoiceTitle: string; // "Factuur" / "Invoice"
 
   // === Document metadata labels ===
-  documentDateLabel: string;       // "Datum" / "Date"
-  dueDateLabel: string;            // "Vervaldatum" / "Due Date"
-  offerNumberLabel: string;        // "Offertenummer" / "Quote Number"
-  invoiceNumberLabel: string;      // "Factuurnummer" / "Invoice Number"
+  documentDateLabel: string; // "Datum" / "Date"
+  dueDateLabel: string; // "Vervaldatum" / "Due Date"
+  offerNumberLabel: string; // "Offertenummer" / "Quote Number"
+  invoiceNumberLabel: string; // "Factuurnummer" / "Invoice Number"
 
   // === Customer section ===
-  customerSectionTitleOffer: string;   // "Klantgegevens" / "Customer Details"
+  customerSectionTitleOffer: string; // "Klantgegevens" / "Customer Details"
   customerSectionTitleInvoice: string; // "Factuuradres" / "Billing Address"
 
   // === Intro/description section ===
-  introSectionLabel: string;       // "Omschrijving" / "Description"
+  introSectionLabel: string; // "Omschrijving" / "Description"
 
   // === Line items table headers ===
-  descriptionLabel: string;        // "Omschrijving" / "Description"
-  quantityLabel: string;           // "Aantal" / "Qty"
-  unitPriceLabel: string;          // "Prijs p/e" / "Unit Price"
-  amountLabel: string;             // "Totaal" / "Amount"
+  descriptionLabel: string; // "Omschrijving" / "Description"
+  quantityLabel: string; // "Aantal" / "Qty"
+  unitPriceLabel: string; // "Prijs p/e" / "Unit Price"
+  amountLabel: string; // "Totaal" / "Amount"
 
   // === Totals section ===
-  subtotalLabel: string;           // "Subtotaal" / "Subtotal"
-  taxLabel: string;                // "BTW" / "VAT" / "Tax"
-  totalLabel: string;              // "Totaal" / "Total"
+  subtotalLabel: string; // "Subtotaal" / "Subtotal"
+  taxLabel: string; // "BTW" / "VAT" / "Tax"
+  totalLabel: string; // "Totaal" / "Total"
 
   // === Notes section ===
-  notesSectionLabel: string;       // "Aanvullende informatie" / "Additional Information"
+  notesSectionLabel: string; // "Aanvullende informatie" / "Additional Information"
 
   // === Payment terms section ===
-  paymentTermsTitleOffer: string;    // "Voorwaarden" / "Terms"
-  paymentTermsTitleInvoice: string;  // "Betalingsvoorwaarden" / "Payment Terms"
+  paymentTermsTitleOffer: string; // "Voorwaarden" / "Terms"
+  paymentTermsTitleInvoice: string; // "Betalingsvoorwaarden" / "Payment Terms"
 
   // === Footer ===
   // Use {company} placeholder for company name, {email} for email, {phone} for phone
-  thankYouText: string;            // "Bedankt voor het vertrouwen in {company}!"
-  questionsTextOffer: string;      // "Bij vragen over deze offerte kunt u contact opnemen via {email} of {phone}."
-  questionsTextInvoice: string;    // "Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}."
+  thankYouText: string; // "Bedankt voor het vertrouwen in {company}!"
+  questionsTextOffer: string; // "Bij vragen over deze offerte kunt u contact opnemen via {email} of {phone}."
+  questionsTextInvoice: string; // "Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}."
 }
 
 /** Full settings object */
@@ -165,8 +165,10 @@ export const DEFAULT_LABELS: DocumentLabelsDto = {
 
   // Footer (use {company}, {email}, {phone} as placeholders)
   thankYouText: 'Thank you for your business with {company}!',
-  questionsTextOffer: 'If you have questions about this quote, please contact us at {email} or {phone}.',
-  questionsTextInvoice: 'If you have questions about this invoice, please contact us at {email} or {phone}.',
+  questionsTextOffer:
+    'If you have questions about this quote, please contact us at {email} or {phone}.',
+  questionsTextInvoice:
+    'If you have questions about this invoice, please contact us at {email} or {phone}.',
 };
 
 /** Dutch labels preset */
@@ -209,7 +211,8 @@ export const DUTCH_LABELS: DocumentLabelsDto = {
   // Footer
   thankYouText: 'Bedankt voor het vertrouwen in {company}!',
   questionsTextOffer: 'Bij vragen over deze offerte kunt u contact opnemen via {email} of {phone}.',
-  questionsTextInvoice: 'Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}.',
+  questionsTextInvoice:
+    'Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}.',
 };
 
 /** Default settings values */

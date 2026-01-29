@@ -1,14 +1,14 @@
 /**
  * PDF Generator - Reference Implementation from Prototype
- * 
+ *
  * This is the PDF generation code that the client approved in the prototype.
  * It will be adapted for the final implementation in packages/frontend/src/services/
- * 
+ *
  * Key approach:
  * - Generates HTML with inline CSS
  * - Uses Electron's printToPDF via IPC (window.electronAPI)
  * - No external PDF library needed
- * 
+ *
  * TODO: Adapt to use:
  * - DocumentDto instead of custom interfaces
  * - BusinessDto instead of CompanyInfo
@@ -158,9 +158,9 @@ export class PDFGenerator {
 
   private generateHTMLContent(documentData: DocumentData, companyInfo: CompanyInfo): string {
     const currentDate = new Date().toLocaleDateString('nl-NL');
-    const dueDate = new Date(Date.now() + documentData.paymentTerm * 24 * 60 * 60 * 1000).toLocaleDateString(
-      'nl-NL'
-    );
+    const dueDate = new Date(
+      Date.now() + documentData.paymentTerm * 24 * 60 * 60 * 1000
+    ).toLocaleDateString('nl-NL');
 
     return `
 <!DOCTYPE html>

@@ -16,6 +16,8 @@ export type {
 // Document DTOs (Offers & Invoices)
 export type {
   DocumentType,
+  OfferStatus,
+  InvoiceStatus,
   DocumentStatus,
   StatusLogEntryDto,
   DocumentItemDto,
@@ -30,9 +32,12 @@ export type {
   ConvertOfferToInvoiceDto,
 } from './document.dto';
 
+export { OFFER_STATUSES, INVOICE_STATUSES, STATUS_LABELS, STATUS_TAG_TYPES } from './document.dto';
+export type { StatusTagType } from './document.dto';
+
 // Legacy Invoice DTOs (kept for reference, use Document DTOs for new code)
 export type {
-  InvoiceStatus,
+  InvoiceStatus as LegacyInvoiceStatus, // Renamed to avoid conflict with document.dto InvoiceStatus
   InvoiceItemDto,
   CreateInvoiceItemDto,
   InvoiceBaseDto,
@@ -76,7 +81,7 @@ export type {
 
 // Database DTOs
 export type { DatabaseDto, DocumentFileDto, InvoiceFileDto } from './database.dto';
-export { 
+export {
   CURRENT_DATABASE_VERSION,
   CURRENT_DOCUMENT_VERSION,
   CURRENT_INVOICE_VERSION,

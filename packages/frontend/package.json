@@ -1,0 +1,35 @@
+{
+  "name": "@crm-local/frontend",
+  "version": "1.0.0",
+  "description": "CRM Local Frontend - Vue 3 + Naive UI + Electron",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "electron:dev": "vite --mode electron",
+    "electron:build": "vue-tsc --noEmit && vite build && electron-builder",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@crm-local/shared": "*",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "pinia": "^2.2.0",
+    "naive-ui": "^2.40.0",
+    "@vicons/ionicons5": "^0.12.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.0",
+    "vite": "^5.4.0",
+    "vue-tsc": "^2.1.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.0"
+  }
+}

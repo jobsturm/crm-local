@@ -17,7 +17,7 @@ export interface CustomerBaseDto {
   email: string;
   phone: string;
   company?: string;
-  address: AddressDto;
+  address?: AddressDto;
   notes?: string;
 }
 

@@ -1,6 +1,6 @@
 /**
  * Templates Index
- * 
+ *
  * Reference implementations and templates from the prototype.
  * These will be adapted for the final implementation.
  */
