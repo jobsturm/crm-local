@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   NCard,
   NDescriptions,
@@ -15,10 +16,11 @@ import {
 import { ArrowBackOutline } from '@vicons/ionicons5';
 import type { UpdateCustomerDto } from '@crm-local/shared';
 import { useCustomerStore } from '@/stores/customers';
-import CustomerFormModal from '@/components/CustomerFormModal.vue';
+import CustomerFormModal from '@/components/CustomerFormModal/CustomerFormModal.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const message = useMessage();
 const store = useCustomerStore();
 
@@ -42,10 +44,10 @@ async function loadData() {
 async function handleUpdate(data: UpdateCustomerDto) {
   try {
     await store.updateCustomer(customerId.value, data);
-    message.success('Customer updated');
+    message.success(t('customerDetail.updated'));
     showEditModal.value = false;
   } catch {
-    message.error('Failed to update customer');
+    message.error(t('customerDetail.updateFailed'));
   }
 }
 
@@ -61,7 +63,7 @@ onMounted(loadData);
         </template>
       </NButton>
       <NText tag="h1" strong style="font-size: 24px; margin: 0">
-        {{ customer?.name ?? 'Customer Details' }}
+        {{ customer?.name ?? t('customerDetail.title') }}
       </NText>
     </NSpace>
 
@@ -69,25 +71,25 @@ onMounted(loadData);
       <NCard v-if="customer">
         <template #header>
           <NSpace justify="space-between" align="center">
-            <NText strong>Customer Information</NText>
-            <NButton type="primary" @click="showEditModal = true">Edit</NButton>
+            <NText strong>{{ t('customerDetail.info') }}</NText>
+            <NButton type="primary" @click="showEditModal = true">{{ t('edit') }}</NButton>
           </NSpace>
         </template>
 
         <NDescriptions label-placement="top" :columns="2">
-          <NDescriptionsItem label="Name">
+          <NDescriptionsItem :label="t('customerDetail.name')">
             {{ customer.name }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="Company">
+          <NDescriptionsItem :label="t('customerDetail.company')">
             {{ customer.company || '-' }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="Email">
+          <NDescriptionsItem :label="t('customerDetail.email')">
             {{ customer.email }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="Phone">
+          <NDescriptionsItem :label="t('customerDetail.phone')">
             {{ customer.phone || '-' }}
           </NDescriptionsItem>
-          <NDescriptionsItem label="Address" :span="2">
+          <NDescriptionsItem :label="t('customerDetail.address')" :span="2">
             <template v-if="customer.address">
               {{ customer.address.street }}<br />
               {{ customer.address.postalCode }} {{ customer.address.city }}<br />
@@ -95,19 +97,19 @@ onMounted(loadData);
             </template>
             <template v-else>-</template>
           </NDescriptionsItem>
-          <NDescriptionsItem label="Notes" :span="2">
+          <NDescriptionsItem :label="t('customerDetail.notes')" :span="2">
             {{ customer.notes || '-' }}
           </NDescriptionsItem>
         </NDescriptions>
       </NCard>
 
-      <NEmpty v-else-if="!loading" description="Customer not found" />
+      <NEmpty v-else-if="!loading" :description="t('customerDetail.notFound')" />
     </NSpin>
 
     <CustomerFormModal
       v-if="customer"
       v-model:show="showEditModal"
-      title="Edit Customer"
+      :title="t('customerDetail.editCustomer')"
       :customer="customer"
       @submit="handleUpdate"
     />

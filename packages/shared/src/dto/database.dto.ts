@@ -124,7 +124,9 @@ export const EMPTY_DATABASE: DatabaseDto = {
         'If you have questions about this invoice, please contact us at {email} or {phone}.',
     },
     theme: 'system',
+    language: 'en-US',
     dateFormat: 'DD-MM-YYYY',
+    fiscalYearStartMonth: 1,
     updatedAt: new Date().toISOString(),
   },
 };

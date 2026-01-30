@@ -6,7 +6,7 @@
  */
 
 import { join } from 'node:path';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, cp, rm } from 'node:fs/promises';
 import type { DatabaseDto, DocumentDto, DocumentFileDto } from '@crm-local/shared';
 import { EMPTY_DATABASE, CURRENT_DATABASE_VERSION, createDocumentFile } from '@crm-local/shared';
 import {
@@ -204,5 +204,71 @@ export class StorageService {
 
     // Sort by createdAt descending (newest first)
     return documents.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  /**
+   * Get the current storage path
+   */
+  getStoragePath(): string {
+    return this.storagePath;
+  }
+
+  /**
+   * Migrate all data to a new storage path
+   * 
+   * @param newPath The new directory to store data in
+   * @param deleteOld Whether to delete the old data after successful migration
+   * @returns The new storage path on success
+   */
+  async migrateToNewPath(newPath: string, deleteOld: boolean = false): Promise<string> {
+    // Validate that new path is different
+    if (newPath === this.storagePath) {
+      throw new Error('New path is the same as current path');
+    }
+
+    // Store old paths for potential cleanup
+    const oldStoragePath = this.storagePath;
+
+    // Create new directory structure
+    const newDatabasePath = join(newPath, 'database.json');
+    const newOffersPath = join(newPath, 'offers');
+    const newInvoicesPath = join(newPath, 'invoices');
+
+    await mkdir(newPath, { recursive: true });
+    await mkdir(newOffersPath, { recursive: true });
+    await mkdir(newInvoicesPath, { recursive: true });
+
+    // Copy database.json
+    if (fileExists(this.databasePath)) {
+      await cp(this.databasePath, newDatabasePath);
+    }
+
+    // Copy offers directory (with all subdirectories)
+    if (fileExists(this.offersPath)) {
+      await cp(this.offersPath, newOffersPath, { recursive: true });
+    }
+
+    // Copy invoices directory (with all subdirectories)
+    if (fileExists(this.invoicesPath)) {
+      await cp(this.invoicesPath, newInvoicesPath, { recursive: true });
+    }
+
+    // Update internal paths
+    this.storagePath = newPath;
+    this.databasePath = newDatabasePath;
+    this.offersPath = newOffersPath;
+    this.invoicesPath = newInvoicesPath;
+
+    // Delete old data if requested
+    if (deleteOld) {
+      try {
+        await rm(oldStoragePath, { recursive: true, force: true });
+      } catch (e) {
+        // Log but don't fail if cleanup fails
+        console.warn('Failed to delete old storage path:', e);
+      }
+    }
+
+    return newPath;
   }
 }

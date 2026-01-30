@@ -15,9 +15,20 @@ export interface PDFGenerationResult {
   error?: string;
 }
 
+interface SelectDirectoryOptions {
+  title?: string;
+  defaultPath?: string;
+}
+
+interface SelectDirectoryResult {
+  canceled: boolean;
+  filePath?: string;
+}
+
 interface ElectronAPI {
   saveFileDialog: (options: SaveDialogOptions) => Promise<SaveDialogResult>;
   generatePDF: (html: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
+  selectDirectory: (options?: SelectDirectoryOptions) => Promise<SelectDirectoryResult>;
 }
 
 interface SaveDialogOptions {
@@ -103,10 +114,20 @@ export function generatePDFHTML(
     : labels.paymentTermsTitleInvoice;
   const questionsText = isOffer ? labels.questionsTextOffer : labels.questionsTextInvoice;
 
-  // Build address string
-  const businessAddress = `${business.address.street}<br>${business.address.postalCode} ${business.address.city}`;
+  // Build address string (handle optional fields)
+  const businessAddress = [
+    business.address.street,
+    `${business.address.postalCode} ${business.address.city}`,
+  ]
+    .filter(Boolean)
+    .join('<br>');
 
-  const customerAddress = `${document.customer.street}<br>${document.customer.postalCode} ${document.customer.city}`;
+  const customerAddress = [
+    document.customer.street,
+    `${document.customer.postalCode} ${document.customer.city}`,
+  ]
+    .filter(Boolean)
+    .join('<br>');
 
   // Replace footer placeholders
   const thankYouText = replacePlaceholders(labels.thankYouText, {

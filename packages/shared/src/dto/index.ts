@@ -62,12 +62,36 @@ export type {
 export type {
   CurrencyCode,
   ThemePreference,
+  LanguagePreference,
+  FiscalYearStartMonth,
   DocumentLabelsDto,
   SettingsDto,
   UpdateSettingsDto,
   SettingsResponseDto,
 } from './settings.dto';
 export { DEFAULT_LABELS, DUTCH_LABELS, DEFAULT_SETTINGS } from './settings.dto';
+
+// Financial DTOs
+export type {
+  Quarter,
+  MonthlyRevenueDto,
+  VatBreakdownDto,
+  QuarterlyBtwSummaryDto,
+  AgingBucketDto,
+  InvoiceStatusBreakdownDto,
+  FinancialOverviewDto,
+  FinancialOverviewRequestDto,
+  FinancialOverviewResponseDto,
+} from './financial.dto';
+
+// Dashboard DTOs
+export type {
+  OverdueInvoiceDto,
+  TopInvoiceDto,
+  TopCustomerDto,
+  DashboardStatsDto,
+  DashboardResponseDto,
+} from './dashboard.dto';
 
 // Common DTOs
 export type {

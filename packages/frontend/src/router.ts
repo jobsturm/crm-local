@@ -4,42 +4,48 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/customers',
+    name: 'dashboard',
+    component: () => import('@/views/DashboardView/DashboardView.vue'),
   },
   {
     path: '/customers',
     name: 'customers',
-    component: () => import('@/views/CustomerListView.vue'),
+    component: () => import('@/views/CustomerListView/CustomerListView.vue'),
   },
   {
     path: '/customers/:id',
     name: 'customer-detail',
-    component: () => import('@/views/CustomerDetailView.vue'),
+    component: () => import('@/views/CustomerDetailView/CustomerDetailView.vue'),
   },
   {
     path: '/documents',
     name: 'documents',
-    component: () => import('@/views/DocumentListView.vue'),
+    component: () => import('@/views/DocumentListView/DocumentListView.vue'),
   },
   {
     path: '/documents/new',
     name: 'document-new',
-    component: () => import('@/views/DocumentFormView.vue'),
+    component: () => import('@/views/DocumentFormView/DocumentFormView.vue'),
   },
   {
     path: '/documents/:id',
     name: 'document-detail',
-    component: () => import('@/views/DocumentDetailView.vue'),
+    component: () => import('@/views/DocumentDetailView/DocumentDetailView.vue'),
   },
   {
     path: '/documents/:id/edit',
     name: 'document-edit',
-    component: () => import('@/views/DocumentFormView.vue'),
+    component: () => import('@/views/DocumentFormView/DocumentFormView.vue'),
+  },
+  {
+    path: '/financial',
+    name: 'financial',
+    component: () => import('@/views/FinancialOverviewView/FinancialOverviewView.vue'),
   },
   {
     path: '/settings',
     name: 'settings',
-    component: () => import('@/views/SettingsView.vue'),
+    component: () => import('@/views/SettingsView/SettingsView.vue'),
   },
 ];
 

@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:run": "vitest run",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "generate-test-data": "tsx scripts/generate-test-data.ts"
   },
   "dependencies": {
     "@crm-local/shared": "*",

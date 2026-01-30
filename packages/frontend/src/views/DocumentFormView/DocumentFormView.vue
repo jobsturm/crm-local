@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   NCard,
   NForm,
@@ -28,6 +29,7 @@ import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const message = useMessage();
 
 const documentStore = useDocumentStore();
@@ -69,20 +71,20 @@ const formValue = ref<FormData>({
   footerText: '',
 });
 
-const rules: FormRules = {
-  customerId: { required: true, message: 'Please select a customer' },
+const rules = computed<FormRules>(() => ({
+  customerId: { required: true, message: t('documentForm.selectCustomer') },
   items: {
     type: 'array',
     required: true,
     min: 1,
-    message: 'At least one item is required',
+    message: t('documentForm.itemRequired'),
   },
-};
+}));
 
-const documentTypeOptions: SelectOption[] = [
-  { label: 'Offer', value: 'offer' },
-  { label: 'Invoice', value: 'invoice' },
-];
+const documentTypeOptions = computed<SelectOption[]>(() => [
+  { label: t('documentForm.offer'), value: 'offer' },
+  { label: t('documentForm.invoice'), value: 'invoice' },
+]);
 
 const customerOptions = computed<SelectOption[]>(() =>
   customerStore.customers.map((c) => ({
@@ -121,7 +123,7 @@ async function handleSubmit() {
     await formRef.value?.validate();
 
     if (!formValue.value.customerId) {
-      message.error('Please select a customer');
+      message.error(t('documentForm.selectCustomer'));
       return;
     }
 
@@ -145,16 +147,14 @@ async function handleSubmit() {
 
     if (isEdit.value && documentId.value) {
       await documentStore.updateDocument(documentId.value, data);
-      message.success('Document updated');
+      message.success(t('documentForm.updated'));
     } else {
       const doc = await documentStore.createDocument(data);
-      message.success(
-        `${doc.documentType === 'offer' ? 'Offer' : 'Invoice'} created: ${doc.documentNumber}`
-      );
-      router.push(`/documents/${doc.id}`);
+      message.success(t('documentForm.created', { number: doc.documentNumber }));
+      void router.push(`/documents/${doc.id}`);
     }
   } catch (e) {
-    message.error(e instanceof Error ? e.message : 'Failed to save document');
+    message.error(e instanceof Error ? e.message : t('documentForm.saveFailed'));
   } finally {
     loading.value = false;
   }
@@ -184,6 +184,7 @@ async function loadData() {
       formValue.value.taxRate = settingsStore.settings.defaultTaxRate;
       formValue.value.documentTitle = settingsStore.settings.labels.offerTitle;
       formValue.value.introText = settingsStore.settings.defaultIntroText ?? '';
+      formValue.value.notesText = settingsStore.settings.defaultNotesText ?? '';
       formValue.value.footerText = settingsStore.settings.defaultFooterText ?? '';
     }
 
@@ -223,7 +224,7 @@ onMounted(loadData);
         </template>
       </NButton>
       <NText tag="h1" strong style="font-size: 24px; margin: 0">
-        {{ isEdit ? 'Edit Document' : 'New Document' }}
+        {{ isEdit ? t('documentForm.editTitle') : t('documentForm.title') }}
       </NText>
     </NSpace>
 
@@ -232,9 +233,9 @@ onMounted(loadData);
         <NGrid :cols="2" :x-gap="24">
           <!-- Left Column -->
           <NGridItem>
-            <NCard title="Document Details">
+            <NCard :title="t('documentForm.documentDetails')">
               <NSpace vertical :size="0">
-                <NFormItem label="Type" path="documentType">
+                <NFormItem :label="t('documentForm.documentType')" path="documentType">
                   <NSelect
                     v-model:value="formValue.documentType"
                     :options="documentTypeOptions"
@@ -242,27 +243,27 @@ onMounted(loadData);
                   />
                 </NFormItem>
 
-                <NFormItem label="Title" path="documentTitle">
-                  <NInput v-model:value="formValue.documentTitle" placeholder="Document title" />
+                <NFormItem :label="t('documentForm.documentTitle')" path="documentTitle">
+                  <NInput v-model:value="formValue.documentTitle" :placeholder="t('documentForm.documentTitlePlaceholder')" />
                 </NFormItem>
 
-                <NFormItem label="Customer" path="customerId">
+                <NFormItem :label="t('documentForm.customer')" path="customerId">
                   <NSelect
                     v-model:value="formValue.customerId"
                     :options="customerOptions"
-                    placeholder="Select customer"
+                    :placeholder="t('documentForm.selectCustomer')"
                     filterable
                   />
                 </NFormItem>
 
                 <NGrid :cols="2" :x-gap="12">
                   <NGridItem>
-                    <NFormItem label="Payment Terms (days)" path="paymentTermDays">
+                    <NFormItem :label="t('documentForm.paymentTermDays')" path="paymentTermDays">
                       <NInputNumber v-model:value="formValue.paymentTermDays" :min="0" :max="365" />
                     </NFormItem>
                   </NGridItem>
                   <NGridItem>
-                    <NFormItem label="Tax Rate (%)" path="taxRate">
+                    <NFormItem :label="t('documentForm.taxRate')" path="taxRate">
                       <NInputNumber v-model:value="formValue.taxRate" :min="0" :max="100" />
                     </NFormItem>
                   </NGridItem>
@@ -270,32 +271,32 @@ onMounted(loadData);
               </NSpace>
             </NCard>
 
-            <NCard title="Notes" style="margin-top: 24px">
+            <NCard :title="t('documentForm.notes')" style="margin-top: 24px">
               <NSpace vertical :size="0">
-                <NFormItem label="Introduction Text" path="introText">
+                <NFormItem :label="t('documentForm.introText')" path="introText">
                   <NInput
                     v-model:value="formValue.introText"
                     type="textarea"
                     :rows="2"
-                    placeholder="Text shown before items"
+                    :placeholder="t('documentForm.introTextPlaceholder')"
                   />
                 </NFormItem>
 
-                <NFormItem label="Additional Notes" path="notesText">
+                <NFormItem :label="t('documentForm.notesText')" path="notesText">
                   <NInput
                     v-model:value="formValue.notesText"
                     type="textarea"
                     :rows="2"
-                    placeholder="Additional notes"
+                    :placeholder="t('documentForm.notesTextPlaceholder')"
                   />
                 </NFormItem>
 
-                <NFormItem label="Footer Text" path="footerText">
+                <NFormItem :label="t('documentForm.footerText')" path="footerText">
                   <NInput
                     v-model:value="formValue.footerText"
                     type="textarea"
                     :rows="2"
-                    placeholder="Payment terms, conditions, etc."
+                    :placeholder="t('documentForm.footerTextPlaceholder')"
                   />
                 </NFormItem>
               </NSpace>
@@ -304,28 +305,25 @@ onMounted(loadData);
 
           <!-- Right Column -->
           <NGridItem>
-            <NCard title="Line Items">
+            <NCard :title="t('documentForm.items')">
               <NSpace vertical :size="16">
                 <NSpace v-for="(item, index) in formValue.items" :key="index" vertical :size="8">
                   <NGrid :cols="12" :x-gap="8">
-                    <NGridItem :span="5">
-                      <NInput v-model:value="item.description" placeholder="Description" />
+                    <NGridItem :span="6">
+                      <NInput v-model:value="item.description" :placeholder="t('documentForm.description')" />
                     </NGridItem>
                     <NGridItem :span="2">
-                      <NInputNumber v-model:value="item.quantity" :min="1" placeholder="Qty" />
+                      <NInputNumber v-model:value="item.quantity" :min="1" :placeholder="t('documentForm.quantity')" />
                     </NGridItem>
                     <NGridItem :span="3">
                       <NInputNumber
                         v-model:value="item.unitPrice"
                         :min="0"
                         :precision="2"
-                        placeholder="Price"
+                        :placeholder="t('documentForm.unitPrice')"
                       >
                         <template #prefix>€</template>
                       </NInputNumber>
-                    </NGridItem>
-                    <NGridItem :span="1">
-                      <NText>{{ formatCurrency(item.quantity * item.unitPrice) }}</NText>
                     </NGridItem>
                     <NGridItem :span="1">
                       <NButton
@@ -347,22 +345,22 @@ onMounted(loadData);
                   <template #icon>
                     <AddOutline />
                   </template>
-                  Add Item
+                  {{ t('documentForm.addItem') }}
                 </NButton>
 
                 <NDivider />
 
                 <NSpace vertical :size="8" align="end">
                   <NSpace justify="space-between" style="width: 200px">
-                    <NText>Subtotal:</NText>
+                    <NText>{{ t('documentForm.subtotal') }}:</NText>
                     <NText>{{ formatCurrency(subtotal) }}</NText>
                   </NSpace>
                   <NSpace justify="space-between" style="width: 200px">
-                    <NText>VAT ({{ formValue.taxRate }}%):</NText>
+                    <NText>{{ t('documentForm.vat') }} ({{ formValue.taxRate }}%):</NText>
                     <NText>{{ formatCurrency(taxAmount) }}</NText>
                   </NSpace>
                   <NSpace justify="space-between" style="width: 200px">
-                    <NText strong>Total:</NText>
+                    <NText strong>{{ t('documentForm.total') }}:</NText>
                     <NText strong>{{ formatCurrency(total) }}</NText>
                   </NSpace>
                 </NSpace>
@@ -370,9 +368,9 @@ onMounted(loadData);
             </NCard>
 
             <NSpace justify="end" style="margin-top: 24px">
-              <NButton @click="router.push('/documents')">Cancel</NButton>
+              <NButton @click="router.push('/documents')">{{ t('cancel') }}</NButton>
               <NButton type="primary" :loading="loading" @click="handleSubmit">
-                {{ isEdit ? 'Update' : 'Create' }} Document
+                {{ isEdit ? t('documentForm.update') : t('documentForm.create') }}
               </NButton>
             </NSpace>
           </NGridItem>

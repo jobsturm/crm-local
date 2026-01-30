@@ -3,11 +3,24 @@
  *
  * GET  /api/settings - Get settings
  * PUT  /api/settings - Update settings
+ * POST /api/settings/storage-path - Change storage path (migrate data)
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
 import type { StorageService } from '../services/storage.service.js';
 import type { SettingsDto, UpdateSettingsDto, SettingsResponseDto } from '@crm-local/shared';
+import { DEFAULT_SETTINGS } from '@crm-local/shared';
+
+interface ChangeStoragePathRequest {
+  newPath: string;
+  deleteOld?: boolean;
+}
+
+interface ChangeStoragePathResponse {
+  success: boolean;
+  storagePath: string;
+  message?: string;
+}
 
 export function createSettingsRoutes(storage: StorageService): Router {
   const router = Router();
@@ -15,10 +28,12 @@ export function createSettingsRoutes(storage: StorageService): Router {
   // Get settings
   router.get('/', (_req: Request, res: Response<SettingsResponseDto>): void => {
     const db = storage.getDatabase();
-    // Add storagePath which is not stored in the database
+    // Merge with defaults to handle missing fields from older database versions
     const settings: SettingsDto = {
+      ...DEFAULT_SETTINGS,
       ...db.settings,
-      storagePath: '', // Will be set by the frontend/electron
+      storagePath: storage.getStoragePath(), // Return actual storage path
+      updatedAt: db.settings.updatedAt,
     };
     res.json({ settings });
   });
@@ -49,11 +64,18 @@ export function createSettingsRoutes(storage: StorageService): Router {
           if (data.defaultIntroText !== undefined) {
             db.settings.defaultIntroText = data.defaultIntroText;
           }
+          if (data.defaultNotesText !== undefined) {
+            db.settings.defaultNotesText = data.defaultNotesText;
+          }
           if (data.defaultFooterText !== undefined) {
             db.settings.defaultFooterText = data.defaultFooterText;
           }
           if (data.theme !== undefined) db.settings.theme = data.theme;
+          if (data.language !== undefined) db.settings.language = data.language;
           if (data.dateFormat !== undefined) db.settings.dateFormat = data.dateFormat;
+          if (data.fiscalYearStartMonth !== undefined) {
+            db.settings.fiscalYearStartMonth = data.fiscalYearStartMonth;
+          }
 
           // Merge labels if provided
           if (data.labels) {
@@ -66,12 +88,51 @@ export function createSettingsRoutes(storage: StorageService): Router {
           db.settings.updatedAt = now;
         });
 
+        // Merge with defaults to handle missing fields
         const settings: SettingsDto = {
+          ...DEFAULT_SETTINGS,
           ...db.settings,
           storagePath: '',
+          updatedAt: db.settings.updatedAt,
         };
 
         res.json({ settings });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Change storage path (migrate data to new location)
+  router.post(
+    '/storage-path',
+    async (
+      req: Request<object, ChangeStoragePathResponse, ChangeStoragePathRequest>,
+      res: Response<ChangeStoragePathResponse>,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const { newPath, deleteOld = false } = req.body;
+
+        if (!newPath || typeof newPath !== 'string') {
+          res.status(400).json({
+            success: false,
+            storagePath: storage.getStoragePath(),
+            message: 'Invalid path provided',
+          });
+          return;
+        }
+
+        // Migrate to new path
+        const finalPath = await storage.migrateToNewPath(newPath, deleteOld);
+
+        res.json({
+          success: true,
+          storagePath: finalPath,
+          message: deleteOld
+            ? 'Data moved to new location'
+            : 'Data copied to new location (original files kept)',
+        });
       } catch (error) {
         next(error);
       }

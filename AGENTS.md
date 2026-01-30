@@ -153,6 +153,61 @@ Use Naive UI's built-in props, NOT custom CSS:
 
 ---
 
+## Internationalization (i18n) Rules
+
+### Language Support
+
+The application supports two languages:
+- **English (en-US)** - Default
+- **Dutch (nl-NL)**
+
+### Core Rules
+
+1. **No translation in the backend**
+   - Backend returns raw values (e.g., status: "draft", "sent", etc.)
+   - All translation happens in the frontend
+
+2. **Backend value mapping**
+   - If backend values need translation, create a map in the frontend
+   - Map backend values to translation keys
+   ```typescript
+   // Example: Map backend status to translation key
+   const statusKey = `status.${backendStatus}`; // "status.draft"
+   const translated = t(statusKey); // "Draft" or "Concept"
+   ```
+
+3. **All visible text through label system**
+   - All user-facing text must use `t()` function from vue-i18n
+   - No hardcoded strings in components (except for technical/debug values)
+
+4. **Flat label structure (no nesting)**
+   - Label files use a flat key-value structure
+   - No nested objects in translation files
+
+5. **Label file structure**
+   ```typescript
+   {
+     "en-US": {
+       "draft": "Draft",
+       "sent": "Sent",
+       "customers.title": "Customers"
+     },
+     "nl-NL": {
+       "draft": "Concept",
+       "sent": "Verzonden",
+       "customers.title": "Klanten"
+     }
+   }
+   ```
+
+### PDF Labels Exception
+
+- PDF labels in settings (`DocumentLabelsDto`) are **user-customizable** and **not** part of i18n
+- These are stored in the database and can be edited by users
+- They are separate from the UI translation system
+
+---
+
 ## TypeScript Rules
 
 ### Strict Mode

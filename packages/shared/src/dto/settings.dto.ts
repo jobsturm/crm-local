@@ -8,6 +8,12 @@ export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'CAD' | 'AUD';
 /** Theme preference */
 export type ThemePreference = 'light' | 'dark' | 'system';
 
+/** UI language preference */
+export type LanguagePreference = 'en-US' | 'nl-NL';
+
+/** Fiscal year start month (1-12) */
+export type FiscalYearStartMonth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
 /**
  * Customizable labels for PDF documents
  * Users can edit these in settings to use their preferred language/terminology
@@ -89,6 +95,9 @@ export interface SettingsDto {
   /** Default intro text for new documents */
   defaultIntroText?: string;
 
+  /** Default notes text for new documents */
+  defaultNotesText?: string;
+
   /** Default footer text for new documents */
   defaultFooterText?: string;
 
@@ -98,8 +107,14 @@ export interface SettingsDto {
   /** UI theme preference */
   theme: ThemePreference;
 
+  /** UI language preference */
+  language: LanguagePreference;
+
   /** Date format preference */
   dateFormat: string; // e.g., "DD-MM-YYYY" or "MM/DD/YYYY"
+
+  /** Fiscal year start month (1 = January, default for Netherlands) */
+  fiscalYearStartMonth: FiscalYearStartMonth;
 
   /** Last updated timestamp */
   updatedAt: string; // ISO 8601 date string
@@ -115,10 +130,13 @@ export interface UpdateSettingsDto {
   offerPrefix?: string;
   invoicePrefix?: string;
   defaultIntroText?: string;
+  defaultNotesText?: string;
   defaultFooterText?: string;
   labels?: Partial<DocumentLabelsDto>;
   theme?: ThemePreference;
+  language?: LanguagePreference;
   dateFormat?: string;
+  fiscalYearStartMonth?: FiscalYearStartMonth;
 }
 
 /** DTO for settings response */
@@ -226,8 +244,11 @@ export const DEFAULT_SETTINGS: Omit<SettingsDto, 'storagePath' | 'updatedAt'> = 
   invoicePrefix: 'INV',
   nextInvoiceNumber: 1,
   defaultIntroText: undefined,
+  defaultNotesText: undefined,
   defaultFooterText: undefined,
   labels: DEFAULT_LABELS,
   theme: 'system',
+  language: 'en-US',
   dateFormat: 'DD-MM-YYYY',
+  fiscalYearStartMonth: 1, // January - default for Netherlands
 };

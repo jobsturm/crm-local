@@ -32,9 +32,9 @@ import type { DocumentItemDto, DocumentStatus } from '@crm-local/shared';
 import {
   OFFER_STATUSES,
   INVOICE_STATUSES,
-  STATUS_LABELS,
   STATUS_TAG_TYPES,
 } from '@crm-local/shared';
+import { useI18n } from 'vue-i18n';
 import { useDocumentStore } from '@/stores/documents';
 import { useSettingsStore } from '@/stores/settings';
 import { generatePDF } from '@/services/pdf-generator';
@@ -43,18 +43,27 @@ const route = useRoute();
 const router = useRouter();
 const message = useMessage();
 const dialog = useDialog();
+const { t } = useI18n();
 const store = useDocumentStore();
 const settingsStore = useSettingsStore();
 
 const documentId = computed(() => route.params.id as string);
 
+// Get translated status label
+function getStatusLabel(status: DocumentStatus): string {
+  return t(`status.${status}`);
+}
+
 const statusSelectOptions = computed<SelectOption[]>(() => {
   const docType = store.currentDocument?.documentType;
+  const currentStatus = store.currentDocument?.status;
   const statuses = docType === 'offer' ? OFFER_STATUSES : INVOICE_STATUSES;
-  return statuses.map((status) => ({
-    label: STATUS_LABELS[status],
-    value: status,
-  }));
+  return statuses
+    .filter((status) => status !== currentStatus)
+    .map((status) => ({
+      label: getStatusLabel(status),
+      value: status,
+    }));
 });
 
 const currentStatus = computed({
@@ -81,38 +90,41 @@ function formatDateTime(dateString: string): string {
   return new Date(dateString).toLocaleString('nl-NL');
 }
 
-const itemColumns: DataTableColumns<DocumentItemDto> = [
-  { title: 'Description', key: 'description' },
-  { title: 'Qty', key: 'quantity', width: 80 },
+const itemColumns = computed<DataTableColumns<DocumentItemDto>>(() => [
+  { title: t('description'), key: 'description' },
+  { title: t('qty'), key: 'quantity', width: 80 },
   {
-    title: 'Unit Price',
+    title: t('unitPrice'),
     key: 'unitPrice',
     width: 120,
     render: (row) => formatCurrency(row.unitPrice),
   },
   {
-    title: 'Total',
+    title: t('total'),
     key: 'total',
     width: 120,
     render: (row) => formatCurrency(row.total),
   },
-];
+]);
 
-async function handleStatusChange(newStatus: DocumentStatus) {
+async function handleStatusChange(newStatus: DocumentStatus): Promise<void> {
   const doc = store.currentDocument;
   if (!doc) return;
 
   dialog.info({
-    title: 'Change Status',
-    content: `Change status from "${doc.status}" to "${newStatus}"?`,
-    positiveText: 'Confirm',
-    negativeText: 'Cancel',
+    title: t('changeStatus'),
+    content: t('changeStatusConfirm', {
+      fromStatus: getStatusLabel(doc.status),
+      toStatus: getStatusLabel(newStatus),
+    }),
+    positiveText: t('confirm'),
+    negativeText: t('cancel'),
     onPositiveClick: async () => {
       try {
         await store.updateDocument(doc.id, { status: newStatus });
-        message.success('Status updated');
+        message.success(t('statusUpdated'));
       } catch {
-        message.error('Failed to update status');
+        message.error(t('statusUpdateFailed'));
       }
     },
   });
@@ -125,22 +137,24 @@ async function handleConvert(): Promise<void> {
   // Check if already converted
   if (doc.convertedToInvoiceId) {
     dialog.warning({
-      title: 'Offer Already Converted',
-      content: `This offer was already converted to an invoice. Do you want to delete the existing invoice and create a new one?`,
-      positiveText: 'Delete & Re-convert',
-      negativeText: 'Cancel',
+      title: t('alreadyConverted'),
+      content: t('alreadyConvertedMessage'),
+      positiveText: t('deleteAndReconvert'),
+      negativeText: t('cancel'),
       onPositiveClick: async () => {
         try {
           // Delete the existing invoice
-          await store.deleteDocument(doc.convertedToInvoiceId!);
-          message.info('Deleted existing invoice');
+          if (doc.convertedToInvoiceId) {
+            await store.deleteDocument(doc.convertedToInvoiceId);
+          }
+          message.info(t('deletedExistingInvoice'));
 
           // Now convert again
           const invoice = await store.convertToInvoice(doc.id);
-          message.success(`Created new invoice ${invoice.documentNumber}`);
+          message.success(t('createdNewInvoice', { number: invoice.documentNumber }));
           void router.push(`/documents/${invoice.id}`);
         } catch {
-          message.error('Failed to re-convert offer');
+          message.error(t('reconvertFailed'));
         }
       },
     });
@@ -148,17 +162,17 @@ async function handleConvert(): Promise<void> {
   }
 
   dialog.info({
-    title: 'Convert to Invoice',
-    content: `Convert offer "${doc.documentNumber}" to an invoice?`,
-    positiveText: 'Convert',
-    negativeText: 'Cancel',
+    title: t('convertToInvoice'),
+    content: t('convertConfirm', { number: doc.documentNumber }),
+    positiveText: t('convert'),
+    negativeText: t('cancel'),
     onPositiveClick: async () => {
       try {
         const invoice = await store.convertToInvoice(doc.id);
-        message.success(`Created invoice ${invoice.documentNumber}`);
+        message.success(t('createdInvoice', { number: invoice.documentNumber }));
         void router.push(`/documents/${invoice.id}`);
       } catch {
-        message.error('Failed to convert offer');
+        message.error(t('convertFailed'));
       }
     },
   });
@@ -167,7 +181,7 @@ async function handleConvert(): Promise<void> {
 async function handleDownloadPDF(): Promise<void> {
   const doc = store.currentDocument;
   if (!doc || !settingsStore.business || !settingsStore.settings) {
-    message.error('Missing document or business information');
+    message.error(t('missingInfo'));
     return;
   }
 
@@ -175,15 +189,15 @@ async function handleDownloadPDF(): Promise<void> {
     const result = await generatePDF(doc, settingsStore.business, settingsStore.settings);
     if (result.success) {
       if (result.filePath) {
-        message.success(`PDF saved to ${result.filePath}`);
+        message.success(t('pdfSaved', { path: result.filePath }));
       } else {
-        message.info('PDF opened for printing');
+        message.info(t('pdfOpened'));
       }
     } else {
-      message.error(result.error ?? 'Failed to generate PDF');
+      message.error(result.error ?? t('pdfFailed'));
     }
   } catch {
-    message.error('Failed to generate PDF');
+    message.error(t('pdfFailed'));
   }
 }
 
@@ -228,19 +242,16 @@ watch(documentId, () => {
         </template>
       </NButton>
       <NText tag="h1" strong style="font-size: 24px; margin: 0">
-        {{ store.currentDocument?.documentNumber ?? 'Document Details' }}
+        {{ store.currentDocument?.documentNumber ?? t('details') }}
       </NText>
       <NTag
         v-if="store.currentDocument"
         :type="store.currentDocument.documentType === 'offer' ? 'info' : 'success'"
       >
-        {{ store.currentDocument.documentType === 'offer' ? 'Offer' : 'Invoice' }}
+        {{ store.currentDocument.documentType === 'offer' ? t('type.offer') : t('type.invoice') }}
       </NTag>
       <NTag v-if="store.currentDocument" :type="STATUS_TAG_TYPES[store.currentDocument.status]">
-        {{
-          store.currentDocument.status.charAt(0).toUpperCase() +
-          store.currentDocument.status.slice(1)
-        }}
+        {{ getStatusLabel(store.currentDocument.status) }}
       </NTag>
     </NSpace>
 
@@ -250,7 +261,7 @@ watch(documentId, () => {
         <NCard>
           <NSpace justify="space-between" align="center">
             <NSpace align="center" :size="8">
-              <NText depth="3">Change Status:</NText>
+              <NText depth="3">{{ t('changeStatus') }}:</NText>
               <NSelect
                 v-model:value="currentStatus"
                 :options="statusSelectOptions"
@@ -269,19 +280,19 @@ watch(documentId, () => {
                 <template #icon>
                   <SwapHorizontalOutline />
                 </template>
-                Convert to Invoice
+                {{ t('convertToInvoice') }}
               </NButton>
               <NButton @click="router.push(`/documents/${documentId}/edit`)">
                 <template #icon>
                   <CreateOutline />
                 </template>
-                Edit
+                {{ t('edit') }}
               </NButton>
               <NButton type="primary" @click="handleDownloadPDF">
                 <template #icon>
                   <DownloadOutline />
                 </template>
-                Download PDF
+                {{ t('downloadPDF') }}
               </NButton>
             </NButtonGroup>
           </NSpace>
@@ -289,53 +300,53 @@ watch(documentId, () => {
           <!-- Conversion Link -->
           <NDivider v-if="store.currentDocument.convertedToInvoiceId || store.currentDocument.convertedFromOfferId" />
           <NSpace v-if="store.currentDocument.convertedToInvoiceId" align="center" :size="8">
-            <NText depth="3">Converted to Invoice:</NText>
+            <NText depth="3">{{ t('convertedToInvoice') }}:</NText>
             <NButton text type="primary" @click="navigateToConvertedInvoice">
-              View Invoice →
+              {{ t('viewInvoice') }}
             </NButton>
           </NSpace>
           <NSpace v-if="store.currentDocument.convertedFromOfferId" align="center" :size="8">
-            <NText depth="3">Created from Offer:</NText>
+            <NText depth="3">{{ t('createdFromOffer') }}:</NText>
             <NButton text type="primary" @click="navigateToSourceOffer">
-              View Offer →
+              {{ t('viewOffer') }}
             </NButton>
           </NSpace>
         </NCard>
 
         <!-- Document Info -->
-        <NCard title="Document Information">
+        <NCard :title="t('information')">
           <NDescriptions label-placement="top" :columns="3">
-            <NDescriptionsItem label="Document Number">
+            <NDescriptionsItem :label="t('documentNumber')">
               {{ store.currentDocument.documentNumber }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Title">
+            <NDescriptionsItem :label="t('documentTitle')">
               {{ store.currentDocument.documentTitle }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Due Date">
+            <NDescriptionsItem :label="t('dueDate')">
               {{ formatDate(store.currentDocument.dueDate) }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Created">
+            <NDescriptionsItem :label="t('createdLabel')">
               {{ formatDateTime(store.currentDocument.createdAt) }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Payment Terms">
-              {{ store.currentDocument.paymentTermDays }} days
+            <NDescriptionsItem :label="t('paymentTermDays')">
+              {{ store.currentDocument.paymentTermDays }} {{ t('days') }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Tax Rate">
+            <NDescriptionsItem :label="t('taxRate')">
               {{ store.currentDocument.taxRate }}%
             </NDescriptionsItem>
           </NDescriptions>
         </NCard>
 
         <!-- Customer Info -->
-        <NCard title="Customer">
+        <NCard :title="t('customer')">
           <NDescriptions label-placement="top" :columns="2">
-            <NDescriptionsItem label="Name">
+            <NDescriptionsItem :label="t('name')">
               {{ store.currentDocument.customer.name }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Company">
+            <NDescriptionsItem :label="t('company')">
               {{ store.currentDocument.customer.company || '-' }}
             </NDescriptionsItem>
-            <NDescriptionsItem label="Address" :span="2">
+            <NDescriptionsItem :label="t('address')" :span="2">
               {{ store.currentDocument.customer.street }}<br />
               {{ store.currentDocument.customer.postalCode }}
               {{ store.currentDocument.customer.city }}
@@ -344,7 +355,7 @@ watch(documentId, () => {
         </NCard>
 
         <!-- Line Items -->
-        <NCard title="Items">
+        <NCard :title="t('items')">
           <NDataTable
             :columns="itemColumns"
             :data="store.currentDocument.items"
@@ -356,15 +367,15 @@ watch(documentId, () => {
 
           <NSpace vertical :size="8" align="end">
             <NSpace justify="space-between" :size="48">
-              <NText>Subtotal:</NText>
+              <NText>{{ t('subtotal') }}:</NText>
               <NText>{{ formatCurrency(store.currentDocument.subtotal) }}</NText>
             </NSpace>
             <NSpace justify="space-between" :size="48">
-              <NText>VAT ({{ store.currentDocument.taxRate }}%):</NText>
+              <NText>{{ t('taxLabel') }} ({{ store.currentDocument.taxRate }}%):</NText>
               <NText>{{ formatCurrency(store.currentDocument.taxAmount) }}</NText>
             </NSpace>
             <NSpace justify="space-between" :size="48">
-              <NText strong>Total:</NText>
+              <NText strong>{{ t('total') }}:</NText>
               <NText strong>{{ formatCurrency(store.currentDocument.total) }}</NText>
             </NSpace>
           </NSpace>
@@ -372,32 +383,34 @@ watch(documentId, () => {
 
         <!-- Notes -->
         <NCard
-          v-if="store.currentDocument.introText || store.currentDocument.notesText"
-          title="Notes"
+          v-if="store.currentDocument.introText || store.currentDocument.notesText || store.currentDocument.footerText"
         >
           <NSpace vertical :size="16">
-            <NDescriptionsItem v-if="store.currentDocument.introText" label="Introduction">
+            <NSpace v-if="store.currentDocument.introText" vertical :size="8">
+              <NText strong>{{ t('introText') }}</NText>
               <NText>{{ store.currentDocument.introText }}</NText>
-            </NDescriptionsItem>
-            <NDescriptionsItem v-if="store.currentDocument.notesText" label="Additional Notes">
+            </NSpace>
+            <NSpace v-if="store.currentDocument.notesText" vertical :size="8">
+              <NText strong>{{ t('notesText') }}</NText>
               <NText>{{ store.currentDocument.notesText }}</NText>
-            </NDescriptionsItem>
-            <NDescriptionsItem v-if="store.currentDocument.footerText" label="Footer">
+            </NSpace>
+            <NSpace v-if="store.currentDocument.footerText" vertical :size="8">
+              <NText strong>{{ t('footerText') }}</NText>
               <NText>{{ store.currentDocument.footerText }}</NText>
-            </NDescriptionsItem>
+            </NSpace>
           </NSpace>
         </NCard>
 
         <!-- Status History -->
-        <NCard title="Status History">
+        <NCard :title="t('statusHistory')">
           <NTimeline>
             <NTimelineItem
               v-for="(entry, index) in store.currentDocument.statusHistory"
               :key="index"
               :title="
                 entry.fromStatus
-                  ? `${entry.fromStatus} → ${entry.toStatus}`
-                  : `Created as ${entry.toStatus}`
+                  ? `${getStatusLabel(entry.fromStatus)} → ${getStatusLabel(entry.toStatus)}`
+                  : t('createdAs', { status: getStatusLabel(entry.toStatus) })
               "
               :time="formatDateTime(entry.timestamp)"
             >
@@ -409,7 +422,7 @@ watch(documentId, () => {
         </NCard>
       </NSpace>
 
-      <NEmpty v-else-if="!store.loading" description="Document not found" />
+      <NEmpty v-else-if="!store.loading" :description="t('notFound')" />
     </NSpin>
   </NSpace>
 </template>

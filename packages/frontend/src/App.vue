@@ -6,7 +6,7 @@ import {
   NLayout,
   NLayoutContent,
 } from 'naive-ui';
-import AppSidebar from '@/components/AppSidebar.vue';
+import AppSidebar from '@/components/AppSidebar/AppSidebar.vue';
 </script>
 
 <template>

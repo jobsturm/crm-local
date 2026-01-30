@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, h, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   NCard,
   NDataTable,
@@ -17,9 +18,10 @@ import {
 import { Add, SearchOutline } from '@vicons/ionicons5';
 import type { CustomerDto, CreateCustomerDto } from '@crm-local/shared';
 import { useCustomerStore } from '@/stores/customers';
-import CustomerFormModal from '@/components/CustomerFormModal.vue';
+import CustomerFormModal from '@/components/CustomerFormModal/CustomerFormModal.vue';
 
 const router = useRouter();
+const { t } = useI18n();
 const message = useMessage();
 const dialog = useDialog();
 const store = useCustomerStore();
@@ -27,32 +29,32 @@ const store = useCustomerStore();
 const searchQuery = ref('');
 const showCreateModal = ref(false);
 
-const columns: DataTableColumns<CustomerDto> = [
+const columns = computed<DataTableColumns<CustomerDto>>(() => [
   {
-    title: 'Name',
+    title: t('customerList.col.name'),
     key: 'name',
     sorter: 'default',
   },
   {
-    title: 'Company',
+    title: t('customerList.col.company'),
     key: 'company',
     sorter: 'default',
   },
   {
-    title: 'Email',
+    title: t('customerList.col.email'),
     key: 'email',
   },
   {
-    title: 'Phone',
+    title: t('customerList.col.phone'),
     key: 'phone',
   },
   {
-    title: 'City',
+    title: t('customerList.col.city'),
     key: 'address.city',
     render: (row) => row.address?.city ?? '-',
   },
   {
-    title: 'Actions',
+    title: t('customerList.col.actions'),
     key: 'actions',
     width: 150,
     render: (row) => {
@@ -61,9 +63,9 @@ const columns: DataTableColumns<CustomerDto> = [
           NButton,
           {
             size: 'small',
-            onClick: () => router.push(`/customers/${row.id}`),
+            onClick: () => void router.push(`/customers/${row.id}`),
           },
-          { default: () => 'View' }
+          { default: () => t('view') }
         ),
         h(
           NButton,
@@ -72,27 +74,25 @@ const columns: DataTableColumns<CustomerDto> = [
             type: 'error',
             onClick: () => handleDelete(row),
           },
-          { default: () => 'Delete' }
+          { default: () => t('delete') }
         ),
       ]);
     },
   },
-];
-
-import { h } from 'vue';
+]);
 
 function handleDelete(customer: CustomerDto) {
   dialog.warning({
-    title: 'Delete Customer',
-    content: `Are you sure you want to delete "${customer.name}"?`,
-    positiveText: 'Delete',
-    negativeText: 'Cancel',
+    title: t('customerList.deleteTitle'),
+    content: t('customerList.deleteConfirm', { name: customer.name }),
+    positiveText: t('delete'),
+    negativeText: t('cancel'),
     onPositiveClick: async () => {
       try {
         await store.deleteCustomer(customer.id);
-        message.success('Customer deleted');
+        message.success(t('customerList.deleted'));
       } catch {
-        message.error('Failed to delete customer');
+        message.error(t('customerList.deleteFailed'));
       }
     },
   });
@@ -101,10 +101,10 @@ function handleDelete(customer: CustomerDto) {
 async function handleCreate(data: CreateCustomerDto) {
   try {
     await store.createCustomer(data);
-    message.success('Customer created');
+    message.success(t('customerList.created'));
     showCreateModal.value = false;
   } catch {
-    message.error('Failed to create customer');
+    message.error(t('customerList.createFailed'));
   }
 }
 
@@ -119,28 +119,26 @@ const filteredCustomers = computed(() => {
   );
 });
 
-import { computed } from 'vue';
-
 onMounted(() => {
-  store.fetchCustomers();
+  void store.fetchCustomers();
 });
 </script>
 
 <template>
   <NSpace vertical :size="24">
     <NSpace justify="space-between" align="center">
-      <NText tag="h1" strong style="font-size: 24px; margin: 0">Customers</NText>
+      <NText tag="h1" strong style="font-size: 24px; margin: 0">{{ t('customerList.title') }}</NText>
       <NButton type="primary" @click="showCreateModal = true">
         <template #icon>
           <Add />
         </template>
-        Add Customer
+        {{ t('customerList.addCustomer') }}
       </NButton>
     </NSpace>
 
     <NCard>
       <NSpace vertical :size="16">
-        <NInput v-model:value="searchQuery" placeholder="Search customers..." clearable>
+        <NInput v-model:value="searchQuery" :placeholder="t('customerList.searchPlaceholder')" clearable>
           <template #prefix>
             <SearchOutline />
           </template>
@@ -154,11 +152,11 @@ onMounted(() => {
             :row-key="(row: CustomerDto) => row.id"
             :pagination="{ pageSize: 20 }"
           />
-          <NEmpty v-else-if="!store.loading" description="No customers found" />
+          <NEmpty v-else-if="!store.loading" :description="t('customerList.noCustomers')" />
         </NSpin>
       </NSpace>
     </NCard>
 
-    <CustomerFormModal v-model:show="showCreateModal" title="Add Customer" @submit="handleCreate" />
+    <CustomerFormModal v-model:show="showCreateModal" :title="t('customerList.addCustomer')" @submit="handleCreate" />
   </NSpace>
 </template>

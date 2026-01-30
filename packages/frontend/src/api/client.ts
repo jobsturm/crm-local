@@ -23,6 +23,11 @@ import type {
   CreateDocumentDto,
   UpdateDocumentDto,
   DocumentType,
+  FinancialOverviewDto,
+  FinancialOverviewResponseDto,
+  Quarter,
+  DashboardStatsDto,
+  DashboardResponseDto,
 } from '@crm-local/shared';
 
 const API_BASE = '/api';
@@ -125,6 +130,22 @@ export async function updateSettings(data: UpdateSettingsDto): Promise<SettingsD
   return res.settings;
 }
 
+interface ChangeStoragePathResponse {
+  success: boolean;
+  storagePath: string;
+  message?: string;
+}
+
+export async function changeStoragePath(
+  newPath: string,
+  deleteOld: boolean = false
+): Promise<ChangeStoragePathResponse> {
+  return request<ChangeStoragePathResponse>('/settings/storage-path', {
+    method: 'POST',
+    body: JSON.stringify({ newPath, deleteOld }),
+  });
+}
+
 // ============ Documents ============
 
 export async function getDocuments(type?: DocumentType): Promise<DocumentSummaryDto[]> {
@@ -174,4 +195,25 @@ export async function convertOfferToInvoice(offerId: string): Promise<DocumentDt
     body: JSON.stringify({ offerId }),
   });
   return res.document;
+}
+
+// ============ Financial ============
+
+export async function getFinancialOverview(
+  year?: number,
+  quarter?: Quarter
+): Promise<FinancialOverviewDto> {
+  const params = new URLSearchParams();
+  if (year !== undefined) params.set('year', String(year));
+  if (quarter !== undefined) params.set('quarter', quarter);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const res = await request<FinancialOverviewResponseDto>(`/financial/overview${query}`);
+  return res.overview;
+}
+
+// ============ Dashboard ============
+
+export async function getDashboardStats(): Promise<DashboardStatsDto> {
+  const res = await request<DashboardResponseDto>('/dashboard');
+  return res.stats;
 }

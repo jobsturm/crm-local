@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   NModal,
   NCard,
@@ -12,6 +13,8 @@ import {
   type FormRules,
 } from 'naive-ui';
 import type { CreateCustomerDto, CustomerDto } from '@crm-local/shared';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   show: boolean;
@@ -40,13 +43,13 @@ const formValue = ref<CreateCustomerDto>({
   },
 });
 
-const rules: FormRules = {
-  name: { required: true, message: 'Name is required' },
+const rules = computed<FormRules>(() => ({
+  name: { required: true, message: t('customerForm.required') },
   email: [
-    { required: true, message: 'Email is required' },
-    { type: 'email', message: 'Invalid email' },
+    { required: true, message: t('customerForm.required') },
+    { type: 'email', message: t('customerForm.invalidEmail') },
   ],
-};
+}));
 
 watch(
   () => props.show,
@@ -101,43 +104,43 @@ async function handleSubmit() {
   <NModal :show="show" @update:show="emit('update:show', $event)">
     <NCard :title="title" :bordered="false" size="huge" closable @close="handleClose">
       <NForm ref="formRef" :model="formValue" :rules="rules" label-placement="top">
-        <NFormItem label="Name" path="name">
-          <NInput v-model:value="formValue.name" placeholder="Customer name" />
+        <NFormItem :label="t('customerForm.name')" path="name">
+          <NInput v-model:value="formValue.name" :placeholder="t('customerForm.namePlaceholder')" />
         </NFormItem>
 
-        <NFormItem label="Email" path="email">
-          <NInput v-model:value="formValue.email" placeholder="email@example.com" />
+        <NFormItem :label="t('customerForm.email')" path="email">
+          <NInput v-model:value="formValue.email" :placeholder="t('customerForm.emailPlaceholder')" />
         </NFormItem>
 
-        <NFormItem label="Phone" path="phone">
-          <NInput v-model:value="formValue.phone" placeholder="Phone number" />
+        <NFormItem :label="t('customerForm.phone')" path="phone">
+          <NInput v-model:value="formValue.phone" :placeholder="t('customerForm.phonePlaceholder')" />
         </NFormItem>
 
-        <NFormItem label="Company" path="company">
-          <NInput v-model:value="formValue.company" placeholder="Company name" />
+        <NFormItem :label="t('customerForm.company')" path="company">
+          <NInput v-model:value="formValue.company" :placeholder="t('customerForm.companyPlaceholder')" />
         </NFormItem>
 
-        <NFormItem label="Street" path="address.street">
-          <NInput v-model:value="formValue.address!.street" placeholder="Street address" />
+        <NFormItem :label="t('customerForm.street')" path="address.street">
+          <NInput v-model:value="formValue.address!.street" :placeholder="t('customerForm.streetPlaceholder')" />
         </NFormItem>
 
         <NSpace :size="12">
-          <NFormItem label="Postal Code" path="address.postalCode">
-            <NInput v-model:value="formValue.address!.postalCode" placeholder="Postal code" />
+          <NFormItem :label="t('customerForm.postalCode')" path="address.postalCode">
+            <NInput v-model:value="formValue.address!.postalCode" :placeholder="t('customerForm.postalCodePlaceholder')" />
           </NFormItem>
 
-          <NFormItem label="City" path="address.city">
-            <NInput v-model:value="formValue.address!.city" placeholder="City" />
+          <NFormItem :label="t('customerForm.city')" path="address.city">
+            <NInput v-model:value="formValue.address!.city" :placeholder="t('customerForm.cityPlaceholder')" />
           </NFormItem>
         </NSpace>
 
-        <NFormItem label="Country" path="address.country">
-          <NInput v-model:value="formValue.address!.country" placeholder="Country" />
+        <NFormItem :label="t('customerForm.country')" path="address.country">
+          <NInput v-model:value="formValue.address!.country" :placeholder="t('customerForm.countryPlaceholder')" />
         </NFormItem>
 
         <NSpace justify="end" :size="12">
-          <NButton @click="handleClose">Cancel</NButton>
-          <NButton type="primary" @click="handleSubmit">Save</NButton>
+          <NButton @click="handleClose">{{ t('cancel') }}</NButton>
+          <NButton type="primary" @click="handleSubmit">{{ t('save') }}</NButton>
         </NSpace>
       </NForm>
     </NCard>
