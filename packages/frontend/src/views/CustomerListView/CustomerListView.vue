@@ -16,9 +16,8 @@ import {
   type DataTableColumns,
 } from 'naive-ui';
 import { Add, SearchOutline } from '@vicons/ionicons5';
-import type { CustomerDto, CreateCustomerDto } from '@crm-local/shared';
+import type { CustomerDto } from '@crm-local/shared';
 import { useCustomerStore } from '@/stores/customers';
-import CustomerFormModal from '@/components/CustomerFormModal/CustomerFormModal.vue';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -27,7 +26,6 @@ const dialog = useDialog();
 const store = useCustomerStore();
 
 const searchQuery = ref('');
-const showCreateModal = ref(false);
 
 const columns = computed<DataTableColumns<CustomerDto>>(() => [
   {
@@ -98,14 +96,8 @@ function handleDelete(customer: CustomerDto) {
   });
 }
 
-async function handleCreate(data: CreateCustomerDto) {
-  try {
-    await store.createCustomer(data);
-    message.success(t('customerList.created'));
-    showCreateModal.value = false;
-  } catch {
-    message.error(t('customerList.createFailed'));
-  }
+function handleAddCustomer() {
+  void router.push('/customers/new');
 }
 
 const filteredCustomers = computed(() => {
@@ -128,7 +120,7 @@ onMounted(() => {
   <NSpace vertical :size="24">
     <NSpace justify="space-between" align="center">
       <NText tag="h1" strong style="font-size: 24px; margin: 0">{{ t('customerList.title') }}</NText>
-      <NButton type="primary" @click="showCreateModal = true">
+      <NButton type="primary" @click="handleAddCustomer">
         <template #icon>
           <Add />
         </template>
@@ -156,7 +148,5 @@ onMounted(() => {
         </NSpin>
       </NSpace>
     </NCard>
-
-    <CustomerFormModal v-model:show="showCreateModal" :title="t('customerList.addCustomer')" @submit="handleCreate" />
   </NSpace>
 </template>

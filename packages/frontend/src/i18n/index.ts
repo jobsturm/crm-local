@@ -5,6 +5,7 @@ import { statusLabels } from './shared/status';
 // Component translations
 import { CustomerListViewTranslations } from '../views/CustomerListView/CustomerListView.translations';
 import { CustomerDetailViewTranslations } from '../views/CustomerDetailView/CustomerDetailView.translations';
+import { CustomerFormViewTranslations } from '../views/CustomerFormView/CustomerFormView.translations';
 import { DocumentListViewTranslations } from '../views/DocumentListView/DocumentListView.translations';
 import { DocumentDetailViewTranslations } from '../views/DocumentDetailView/DocumentDetailView.translations';
 import { DocumentFormViewTranslations } from '../views/DocumentFormView/DocumentFormView.translations';
@@ -37,6 +38,7 @@ export const labels = combineLabels(
   statusLabels,
   CustomerListViewTranslations,
   CustomerDetailViewTranslations,
+  CustomerFormViewTranslations,
   DocumentListViewTranslations,
   DocumentDetailViewTranslations,
   DocumentFormViewTranslations,

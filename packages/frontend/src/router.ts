@@ -13,9 +13,19 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/CustomerListView/CustomerListView.vue'),
   },
   {
+    path: '/customers/new',
+    name: 'customer-new',
+    component: () => import('@/views/CustomerFormView/CustomerFormView.vue'),
+  },
+  {
     path: '/customers/:id',
     name: 'customer-detail',
     component: () => import('@/views/CustomerDetailView/CustomerDetailView.vue'),
+  },
+  {
+    path: '/customers/:id/edit',
+    name: 'customer-edit',
+    component: () => import('@/views/CustomerFormView/CustomerFormView.vue'),
   },
   {
     path: '/documents',

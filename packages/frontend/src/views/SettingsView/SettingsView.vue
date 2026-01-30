@@ -377,28 +377,26 @@ onMounted(() => {
             </template>
 
             <template #2>
-              <NCard style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-                <template #header>
-                  <NSpace justify="space-between" align="center">
-                    <NSpace align="center" :size="8">
-                      <NText strong>{{ t('settings.preview.title') }}</NText>
-                      <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
-                    </NSpace>
-                    <NSelect
-                      v-model:value="previewDocType"
-                      :options="previewDocTypeOptions"
-                      size="small"
-                      style="width: 120px"
-                    />
+              <div style="height: 100%; display: flex; flex-direction: column; background: #f5f5f5; border-radius: 4px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                  <NSpace align="center" :size="8">
+                    <NText strong>{{ t('settings.preview.title') }}</NText>
+                    <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                </template>
-                <div style="flex: 1; min-height: 0; overflow: auto; padding: 16px; background: #f0f0f0;">
-                  <iframe
-                    :src="previewDataUrl"
-                    style="width: 100%; min-height: 800px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  <NSelect
+                    v-model:value="previewDocType"
+                    :options="previewDocTypeOptions"
+                    size="small"
+                    style="width: 120px"
                   />
                 </div>
-              </NCard>
+                <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
+                  <iframe
+                    :src="previewDataUrl"
+                    style="display: block; width: 100%; height: 1200px; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  />
+                </div>
+              </div>
             </template>
           </NSplit>
         </NTabPane>
@@ -469,28 +467,26 @@ onMounted(() => {
             </template>
 
             <template #2>
-              <NCard style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-                <template #header>
-                  <NSpace justify="space-between" align="center">
-                    <NSpace align="center" :size="8">
-                      <NText strong>{{ t('settings.preview.title') }}</NText>
-                      <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
-                    </NSpace>
-                    <NSelect
-                      v-model:value="previewDocType"
-                      :options="previewDocTypeOptions"
-                      size="small"
-                      style="width: 120px"
-                    />
+              <div style="height: 100%; display: flex; flex-direction: column; background: #f5f5f5; border-radius: 4px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                  <NSpace align="center" :size="8">
+                    <NText strong>{{ t('settings.preview.title') }}</NText>
+                    <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                </template>
-                <div style="flex: 1; min-height: 0; overflow: auto; padding: 16px; background: #f0f0f0;">
-                  <iframe
-                    :src="previewDataUrl"
-                    style="width: 100%; min-height: 800px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  <NSelect
+                    v-model:value="previewDocType"
+                    :options="previewDocTypeOptions"
+                    size="small"
+                    style="width: 120px"
                   />
                 </div>
-              </NCard>
+                <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
+                  <iframe
+                    :src="previewDataUrl"
+                    style="display: block; width: 100%; height: 1200px; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  />
+                </div>
+              </div>
             </template>
           </NSplit>
         </NTabPane>
@@ -589,28 +585,26 @@ onMounted(() => {
             </template>
 
             <template #2>
-              <NCard style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-                <template #header>
-                  <NSpace justify="space-between" align="center">
-                    <NSpace align="center" :size="8">
-                      <NText strong>{{ t('settings.preview.title') }}</NText>
-                      <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
-                    </NSpace>
-                    <NSelect
-                      v-model:value="previewDocType"
-                      :options="previewDocTypeOptions"
-                      size="small"
-                      style="width: 120px"
-                    />
+              <div style="height: 100%; display: flex; flex-direction: column; background: #f5f5f5; border-radius: 4px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                  <NSpace align="center" :size="8">
+                    <NText strong>{{ t('settings.preview.title') }}</NText>
+                    <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                </template>
-                <div style="flex: 1; min-height: 0; overflow: auto; padding: 16px; background: #f0f0f0;">
-                  <iframe
-                    :src="previewDataUrl"
-                    style="width: 100%; min-height: 800px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  <NSelect
+                    v-model:value="previewDocType"
+                    :options="previewDocTypeOptions"
+                    size="small"
+                    style="width: 120px"
                   />
                 </div>
-              </NCard>
+                <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
+                  <iframe
+                    :src="previewDataUrl"
+                    style="display: block; width: 100%; height: 1200px; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                  />
+                </div>
+              </div>
             </template>
           </NSplit>
         </NTabPane>
