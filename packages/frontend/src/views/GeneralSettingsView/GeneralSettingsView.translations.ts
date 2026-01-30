@@ -7,6 +7,8 @@ export const GeneralSettingsViewTranslations = {
     'generalSettings.theme.dark': 'Dark',
     'generalSettings.theme.system': 'System',
     'generalSettings.theme.currentlyUsing': 'Currently using {theme} based on your system preferences',
+    'generalSettings.language.title': 'Language',
+    'generalSettings.language.description': 'Select your preferred language for the interface.',
   },
   'nl-NL': {
     'generalSettings.title': 'Algemene Instellingen',
@@ -16,5 +18,7 @@ export const GeneralSettingsViewTranslations = {
     'generalSettings.theme.dark': 'Donker',
     'generalSettings.theme.system': 'Systeem',
     'generalSettings.theme.currentlyUsing': 'Momenteel {theme} op basis van je systeemvoorkeuren',
+    'generalSettings.language.title': 'Taal',
+    'generalSettings.language.description': 'Selecteer je voorkeurstaal voor de interface.',
   },
 } as const;

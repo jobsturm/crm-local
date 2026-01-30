@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NCard,
@@ -18,13 +18,13 @@ import {
   useMessage,
   useDialog,
 } from 'naive-ui';
-import { SunnyOutline, MoonOutline, DesktopOutline } from '@vicons/ionicons5';
-import type { ThemePreference } from '@crm-local/shared';
+import { SunnyOutline, MoonOutline, DesktopOutline, LanguageOutline } from '@vicons/ionicons5';
+import type { ThemePreference, LanguagePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
 import { useTheme } from '@/composables/useTheme';
 import * as api from '@/api/client';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const message = useMessage();
 const dialog = useDialog();
 const store = useSettingsStore();
@@ -47,6 +47,34 @@ const themeOptions = computed(() => [
 function handleThemeChange(value: ThemePreference) {
   void setThemePreference(value);
 }
+
+// Language options
+const languageOptions: Array<{ value: LanguagePreference; label: string; nativeLabel: string }> = [
+  { value: 'en-US', label: 'English', nativeLabel: 'English' },
+  { value: 'nl-NL', label: 'Dutch', nativeLabel: 'Nederlands' },
+];
+
+const currentLanguage = computed(() => (locale.value as LanguagePreference) || 'en-US');
+
+async function handleLanguageChange(value: LanguagePreference) {
+  locale.value = value;
+  try {
+    await store.updateSettings({ language: value });
+  } catch {
+    // Silently fail - language change still works locally
+  }
+}
+
+// Sync language from settings on load
+watch(
+  () => store.settings?.language,
+  (newLanguage) => {
+    if (newLanguage && newLanguage !== locale.value) {
+      locale.value = newLanguage;
+    }
+  },
+  { immediate: true }
+);
 
 async function browseForDirectory() {
   if (!window.electronAPI?.selectDirectory) {
@@ -148,6 +176,28 @@ onMounted(() => {
           <NText v-if="themePreference === 'system'" depth="3" style="font-size: 13px;">
             {{ t('generalSettings.theme.currentlyUsing', { theme: resolvedTheme === 'dark' ? t('generalSettings.theme.dark') : t('generalSettings.theme.light') }) }}
           </NText>
+
+          <NDivider />
+
+          <!-- Language Section -->
+          <NText strong>{{ t('generalSettings.language.title') }}</NText>
+          <NText depth="3">{{ t('generalSettings.language.description') }}</NText>
+          
+          <NRadioGroup :value="currentLanguage" @update:value="handleLanguageChange">
+            <NSpace :size="12">
+              <NRadioButton
+                v-for="option in languageOptions"
+                :key="option.value"
+                :value="option.value"
+                style="padding: 12px 20px;"
+              >
+                <NSpace align="center" :size="8">
+                  <NIcon :component="LanguageOutline" :size="18" />
+                  <span>{{ option.nativeLabel }}</span>
+                </NSpace>
+              </NRadioButton>
+            </NSpace>
+          </NRadioGroup>
         </NSpace>
       </NCard>
 
