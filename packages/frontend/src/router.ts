@@ -1,5 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+
+// Use hash history for Electron (file:// protocol), web history for browser
+const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -65,6 +68,6 @@ const routes: RouteRecordRaw[] = [
 ];
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: isFileProtocol ? createWebHashHistory() : createWebHistory(),
   routes,
 });
