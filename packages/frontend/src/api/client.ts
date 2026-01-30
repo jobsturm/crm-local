@@ -30,12 +30,43 @@ import type {
   DashboardResponseDto,
 } from '@crm-local/shared';
 
-// In Electron (file:// protocol), use absolute URL to backend
-// In browser (with Vite proxy), use relative URL
-const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
-const API_BASE = isFileProtocol ? 'http://localhost:3456/api' : '/api';
+// API base URL management
+// In Electron, we get the port from the main process
+// In browser (with Vite proxy), we use relative URL
+let API_BASE = '/api';
+let apiBaseInitialized = false;
+
+async function initializeApiBase(): Promise<void> {
+  if (apiBaseInitialized) return;
+
+  const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+
+  if (isFileProtocol && window.electronAPI?.getBackendPort) {
+    try {
+      const port = await window.electronAPI.getBackendPort();
+      API_BASE = `http://localhost:${port}/api`;
+      console.log(`API initialized: ${API_BASE}`);
+    } catch (err) {
+      console.error('Failed to get backend port, using default:', err);
+      API_BASE = 'http://localhost:3456/api';
+    }
+  }
+
+  apiBaseInitialized = true;
+}
+
+// Initialize on module load for Electron
+if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+  // Use setTimeout to ensure electronAPI is available
+  setTimeout(() => {
+    void initializeApiBase();
+  }, 0);
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // Ensure API base is initialized
+  await initializeApiBase();
+
   const url = `${API_BASE}${endpoint}`;
 
   const headers: Record<string, string> = {

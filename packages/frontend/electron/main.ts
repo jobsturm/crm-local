@@ -1,13 +1,15 @@
 /**
  * Electron Main Process
  *
- * Creates the main application window, handles IPC communication, and auto-updates.
+ * Creates the main application window, handles IPC communication, auto-updates,
+ * and manages the bundled backend server.
  */
 
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { fork, type ChildProcess } from 'child_process';
 
 // ESM compatibility - get __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +19,95 @@ const __dirname = dirname(__filename);
 app.disableHardwareAcceleration();
 
 let mainWindow: BrowserWindow | null = null;
+let backendProcess: ChildProcess | null = null;
+let backendPort = 3456;
+
+// ============================================================
+// Backend Server Management
+// ============================================================
+
+function getBackendPath(): string {
+  if (process.env.VITE_DEV_SERVER_URL) {
+    // Development: use the source directly
+    return join(__dirname, '../../packages/backend/dist-bundle/server.cjs');
+  }
+  // Production: bundled with the app
+  return join(process.resourcesPath, 'backend', 'server.cjs');
+}
+
+function getStoragePath(): string {
+  // Use app's userData directory for storage
+  return join(app.getPath('userData'), 'data');
+}
+
+async function startBackend(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const backendPath = getBackendPath();
+    const storagePath = getStoragePath();
+
+    console.log(`Starting backend from: ${backendPath}`);
+    console.log(`Storage path: ${storagePath}`);
+
+    // Fork the backend process
+    backendProcess = fork(backendPath, [], {
+      env: {
+        ...process.env,
+        CRM_STORAGE_PATH: storagePath,
+        PORT: String(backendPort),
+      },
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+    });
+
+    let started = false;
+
+    backendProcess.stdout?.on('data', (data: Buffer) => {
+      const message = data.toString();
+      console.log(`[Backend] ${message}`);
+      
+      // Check if server started successfully
+      if (message.includes('CRM Backend running') && !started) {
+        started = true;
+        // Extract port from message if it changed
+        const portMatch = message.match(/localhost:(\d+)/);
+        if (portMatch && portMatch[1]) {
+          backendPort = parseInt(portMatch[1], 10);
+        }
+        resolve(backendPort);
+      }
+    });
+
+    backendProcess.stderr?.on('data', (data: Buffer) => {
+      console.error(`[Backend Error] ${data.toString()}`);
+    });
+
+    backendProcess.on('error', (err) => {
+      console.error('Failed to start backend:', err);
+      if (!started) {
+        reject(err);
+      }
+    });
+
+    backendProcess.on('exit', (code) => {
+      console.log(`Backend process exited with code ${code}`);
+      backendProcess = null;
+    });
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      if (!started) {
+        reject(new Error('Backend startup timeout'));
+      }
+    }, 10000);
+  });
+}
+
+function stopBackend(): void {
+  if (backendProcess) {
+    console.log('Stopping backend...');
+    backendProcess.kill();
+    backendProcess = null;
+  }
+}
 
 // ============================================================
 // Auto-Updater Configuration
@@ -120,21 +211,42 @@ function createWindow() {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
-  createWindow();
-  setupAutoUpdater();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+app.whenReady().then(async () => {
+  try {
+    // Start the backend server first (skip in dev mode with external backend)
+    if (!process.env.VITE_DEV_SERVER_URL || process.env.BUNDLE_BACKEND === 'true') {
+      console.log('Starting bundled backend...');
+      backendPort = await startBackend();
+      console.log(`Backend started on port ${backendPort}`);
     }
-  });
+
+    createWindow();
+    setupAutoUpdater();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  } catch (error) {
+    console.error('Failed to start app:', error);
+    dialog.showErrorBox('Startup Error', `Failed to start backend: ${error}`);
+    app.quit();
+  }
 });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('will-quit', () => {
+  stopBackend();
+});
+
+app.on('quit', () => {
+  stopBackend();
 });
 
 // ============================================================
@@ -273,4 +385,14 @@ ipcMain.handle('updater:install', () => {
 // Get current app version
 ipcMain.handle('app:version', () => {
   return app.getVersion();
+});
+
+// Get backend port
+ipcMain.handle('backend:port', () => {
+  return backendPort;
+});
+
+// Get storage path
+ipcMain.handle('storage:path', () => {
+  return getStoragePath();
 });

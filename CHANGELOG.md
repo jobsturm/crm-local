@@ -5,6 +5,16 @@ All notable changes to Simpel CRM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-01-30
+
+### Added
+- **Bundled Backend**: Backend server now starts automatically with the app
+- No need to run the backend separately - it's all in one package
+- Automatic storage path in user data directory
+
+### Fixed
+- Fixed API calls in Electron to connect to bundled backend
+
 ## [1.0.3] - 2026-01-30
 
 ### Fixed

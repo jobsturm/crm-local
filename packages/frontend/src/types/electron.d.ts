@@ -38,6 +38,10 @@ interface ElectronAPI {
   getVersion: () => Promise<string>;
   platform: NodeJS.Platform;
 
+  // Backend info
+  getBackendPort: () => Promise<number>;
+  getStoragePath: () => Promise<string>;
+
   // Auto-updater
   checkForUpdates: () => Promise<{
     success: boolean;

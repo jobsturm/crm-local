@@ -78,6 +78,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   platform: process.platform,
 
+  /**
+   * Get the backend server port
+   */
+  getBackendPort: (): Promise<number> => {
+    return ipcRenderer.invoke('backend:port');
+  },
+
+  /**
+   * Get the storage path
+   */
+  getStoragePath: (): Promise<string> => {
+    return ipcRenderer.invoke('storage:path');
+  },
+
   // ============================================================
   // Auto-Updater API
   // ============================================================

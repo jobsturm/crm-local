@@ -1,7 +1,7 @@
 {
   "name": "simpel-crm",
   "productName": "Simpel CRM",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple, local CRM for freelancers and small businesses",
   "author": {
     "name": "Job Sturm",
@@ -16,13 +16,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:all": "npm run build && npm run build:backend",
+    "build:backend": "cd ../backend && npm run build:bundle",
     "preview": "vite preview",
     "electron:dev": "vite --mode electron",
-    "electron:build": "npm run build && electron-builder --publish never",
-    "electron:build:mac": "npm run build && electron-builder --mac --publish never",
-    "electron:build:win": "npm run build && electron-builder --win --publish never",
-    "electron:build:linux": "npm run build && electron-builder --linux --publish never",
-    "electron:publish": "npm run build && electron-builder --publish always",
+    "electron:build": "npm run build:all && electron-builder --publish never",
+    "electron:build:mac": "npm run build:all && electron-builder --mac --publish never",
+    "electron:build:win": "npm run build:all && electron-builder --win --publish never",
+    "electron:build:linux": "npm run build:all && electron-builder --linux --publish never",
+    "electron:publish": "npm run build:all && electron-builder --publish always",
     "postinstall": "electron-builder install-app-deps",
     "test": "vitest",
     "test:run": "vitest run"
@@ -63,6 +65,18 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist-bundle/",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "resources/backend/**/*"
     ],
     "mac": {
       "category": "public.app-category.business",
