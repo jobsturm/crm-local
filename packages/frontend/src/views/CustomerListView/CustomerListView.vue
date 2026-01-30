@@ -111,6 +111,19 @@ const filteredCustomers = computed(() => {
   );
 });
 
+// Make rows clickable - navigate to customer detail
+function rowProps(row: CustomerDto) {
+  return {
+    style: 'cursor: pointer;',
+    onClick: (e: MouseEvent) => {
+      // Don't navigate if clicking on action buttons
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) return;
+      void router.push(`/customers/${row.id}`);
+    },
+  };
+}
+
 onMounted(() => {
   void store.fetchCustomers();
 });
@@ -142,6 +155,7 @@ onMounted(() => {
             :columns="columns"
             :data="filteredCustomers"
             :row-key="(row: CustomerDto) => row.id"
+            :row-props="rowProps"
             :pagination="{ pageSize: 20 }"
           />
           <NEmpty v-else-if="!store.loading" :description="t('customerList.noCustomers')" />

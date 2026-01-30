@@ -199,6 +199,19 @@ const displayedDocuments = computed(() => {
   );
 });
 
+// Make rows clickable - navigate to document detail
+function rowProps(row: DocumentSummaryDto) {
+  return {
+    style: 'cursor: pointer;',
+    onClick: (e: MouseEvent) => {
+      // Don't navigate if clicking on action buttons
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) return;
+      void router.push(`/documents/${row.id}`);
+    },
+  };
+}
+
 onMounted(() => {
   void store.fetchDocuments();
 });
@@ -238,13 +251,14 @@ onMounted(() => {
 
         <NSpin :show="store.loading">
           <NDataTable
-          v-if="displayedDocuments.length > 0"
-          :columns="columns"
-          :data="displayedDocuments"
-          :row-key="(row: DocumentSummaryDto) => row.id"
-          :pagination="{ pageSize: 20 }"
-          :scroll-x="880"
-        />
+            v-if="displayedDocuments.length > 0"
+            :columns="columns"
+            :data="displayedDocuments"
+            :row-key="(row: DocumentSummaryDto) => row.id"
+            :row-props="rowProps"
+            :pagination="{ pageSize: 20 }"
+            :scroll-x="880"
+          />
           <NEmpty v-else-if="!store.loading" :description="t('documentList.noDocuments')" />
         </NSpin>
       </NSpace>
