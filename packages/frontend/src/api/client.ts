@@ -30,7 +30,10 @@ import type {
   DashboardResponseDto,
 } from '@crm-local/shared';
 
-const API_BASE = '/api';
+// In Electron (file:// protocol), use absolute URL to backend
+// In browser (with Vite proxy), use relative URL
+const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+const API_BASE = isFileProtocol ? 'http://localhost:3456/api' : '/api';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
