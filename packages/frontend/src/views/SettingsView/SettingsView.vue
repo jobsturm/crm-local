@@ -514,6 +514,14 @@ onMounted(() => {
                   <NFormItem :label="t('settings.customerSectionOffer')" path="customerSectionTitleOffer">
                     <NInput v-model:value="labelsForm.customerSectionTitleOffer" placeholder="Customer Details" />
                   </NFormItem>
+                  <NFormItem :label="t('settings.questionsTextOffer')" path="questionsTextOffer">
+                    <NInput
+                      v-model:value="labelsForm.questionsTextOffer"
+                      type="textarea"
+                      :rows="2"
+                      :placeholder="t('settings.questionsTextPlaceholder')"
+                    />
+                  </NFormItem>
 
                   <!-- INVOICE-ONLY LABELS -->
                   <NDivider title-placement="left">
@@ -527,6 +535,14 @@ onMounted(() => {
                   </NFormItem>
                   <NFormItem :label="t('settings.customerSectionInvoice')" path="customerSectionTitleInvoice">
                     <NInput v-model:value="labelsForm.customerSectionTitleInvoice" placeholder="Billing Address" />
+                  </NFormItem>
+                  <NFormItem :label="t('settings.questionsTextInvoice')" path="questionsTextInvoice">
+                    <NInput
+                      v-model:value="labelsForm.questionsTextInvoice"
+                      type="textarea"
+                      :rows="2"
+                      :placeholder="t('settings.questionsTextPlaceholder')"
+                    />
                   </NFormItem>
 
                   <!-- SHARED LABELS -->
