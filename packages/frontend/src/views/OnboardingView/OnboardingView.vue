@@ -13,6 +13,7 @@ import {
   NInput,
   NIcon,
   NResult,
+  NDropdown,
   useMessage,
 } from 'naive-ui';
 import {
@@ -23,16 +24,44 @@ import {
   ArrowForwardOutline,
   ArrowBackOutline,
   RocketOutline,
+  GlobeOutline,
 } from '@vicons/ionicons5';
-import type { UpdateBusinessDto } from '@crm-local/shared';
+import type { UpdateBusinessDto, LanguagePreference } from '@crm-local/shared';
 import * as api from '@/api/client';
+import FlagIcon from '@/components/icons/FlagIcon.vue';
+import { useSettingsStore } from '@/stores/settings';
 
 const emit = defineEmits<{
   complete: [];
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const message = useMessage();
+const store = useSettingsStore();
+
+// Language options
+const languageOptions: Array<{ label: string; key: string; flagCode: 'gb' | 'nl' }> = [
+  { label: 'English', key: 'en-US', flagCode: 'gb' },
+  { label: 'Nederlands', key: 'nl-NL', flagCode: 'nl' },
+];
+
+const defaultLanguage = languageOptions[0];
+
+const currentLanguage = computed(() => {
+  return languageOptions.find(l => l.key === locale.value) ?? defaultLanguage;
+});
+
+async function handleLanguageChange(key: string) {
+  const newLang = key as LanguagePreference;
+  locale.value = newLang;
+  
+  // Save to backend
+  try {
+    await store.updateSettings({ language: newLang });
+  } catch {
+    // Silently fail - language change still works locally
+  }
+}
 
 const currentStep = ref(1);
 const saving = ref(false);
@@ -105,6 +134,24 @@ function skipOnboarding() {
 
 <template>
   <div class="onboarding-container">
+    <!-- Language Switcher - Top Right -->
+    <div class="language-switcher">
+      <NDropdown
+        :options="languageOptions.map(l => ({ label: l.label, key: l.key }))"
+        @select="handleLanguageChange"
+        trigger="click"
+        placement="bottom-end"
+      >
+        <NButton quaternary size="small" class="language-button">
+          <NSpace :size="8" align="center">
+            <FlagIcon :code="currentLanguage?.flagCode ?? 'gb'" :size="20" />
+            <span>{{ currentLanguage?.label ?? 'English' }}</span>
+            <NIcon :size="14"><GlobeOutline /></NIcon>
+          </NSpace>
+        </NButton>
+      </NDropdown>
+    </div>
+
     <div class="onboarding-content">
       <!-- Header -->
       <NSpace vertical align="center" :size="8" class="onboarding-header">
@@ -378,6 +425,23 @@ function skipOnboarding() {
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.language-button {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+}
+
+.language-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 .onboarding-content {
