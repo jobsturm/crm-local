@@ -40,7 +40,7 @@ export const OnboardingViewTranslations = {
     'onboarding.fields.countryPlaceholder': 'e.g., Netherlands',
     
     'onboarding.fields.email': 'Email Address',
-    'onboarding.fields.emailPlaceholder': 'e.g., info\\@yourcompany.nl',
+    'onboarding.fields.emailPlaceholder': "e.g., info{'@'}yourcompany.nl",
     'onboarding.fields.phone': 'Phone Number',
     'onboarding.fields.phonePlaceholder': 'e.g., +31 20 123 4567',
     'onboarding.fields.website': 'Website (optional)',
@@ -104,7 +104,7 @@ export const OnboardingViewTranslations = {
     'onboarding.fields.countryPlaceholder': 'bijv. Nederland',
     
     'onboarding.fields.email': 'E-mailadres',
-    'onboarding.fields.emailPlaceholder': 'bijv. info\\@jouwbedrijf.nl',
+    'onboarding.fields.emailPlaceholder': "bijv. info{'@'}jouwbedrijf.nl",
     'onboarding.fields.phone': 'Telefoonnummer',
     'onboarding.fields.phonePlaceholder': 'bijv. +31 20 123 4567',
     'onboarding.fields.website': 'Website (optioneel)',
