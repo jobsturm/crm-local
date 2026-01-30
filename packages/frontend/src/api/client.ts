@@ -199,6 +199,18 @@ export async function changeStoragePath(
   });
 }
 
+interface ResetDataResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function resetAllData(confirmationText: string): Promise<ResetDataResponse> {
+  return request<ResetDataResponse>('/settings/reset', {
+    method: 'POST',
+    body: JSON.stringify({ confirmationText }),
+  });
+}
+
 // ============ Documents ============
 
 export async function getDocuments(type?: DocumentType): Promise<DocumentSummaryDto[]> {

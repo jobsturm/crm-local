@@ -271,4 +271,38 @@ export class StorageService {
 
     return newPath;
   }
+
+  /**
+   * Reset all data - delete everything and start fresh
+   */
+  async resetAllData(): Promise<void> {
+    // Delete offers directory
+    try {
+      await rm(this.offersPath, { recursive: true, force: true });
+    } catch {
+      // Ignore errors
+    }
+
+    // Delete invoices directory
+    try {
+      await rm(this.invoicesPath, { recursive: true, force: true });
+    } catch {
+      // Ignore errors
+    }
+
+    // Recreate directories
+    await mkdir(this.offersPath, { recursive: true });
+    await mkdir(this.invoicesPath, { recursive: true });
+
+    // Reset database to empty state
+    this.database = {
+      ...EMPTY_DATABASE,
+      version: CURRENT_DATABASE_VERSION,
+      settings: {
+        ...EMPTY_DATABASE.settings,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    await this.saveDatabase();
+  }
 }

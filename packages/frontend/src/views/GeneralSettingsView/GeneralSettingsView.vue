@@ -17,10 +17,11 @@ import {
   NDivider,
   NTag,
   NProgress,
+  NModal,
   useMessage,
   useDialog,
 } from 'naive-ui';
-import { SunnyOutline, MoonOutline, DesktopOutline, RefreshOutline, DownloadOutline } from '@vicons/ionicons5';
+import { SunnyOutline, MoonOutline, DesktopOutline, RefreshOutline, DownloadOutline, TrashOutline } from '@vicons/ionicons5';
 import FlagIcon from '@/components/icons/FlagIcon.vue';
 import type { ThemePreference, LanguagePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
@@ -53,6 +54,12 @@ const newStoragePath = ref('');
 const deleteOldData = ref(false);
 const changingStoragePath = ref(false);
 const hasElectron = ref(false);
+
+// Reset data state
+const showResetModal = ref(false);
+const resetConfirmationText = ref('');
+const isResetting = ref(false);
+const REQUIRED_CONFIRMATION = 'I want to reset';
 
 // Theme options with icons
 const themeOptions = computed(() => [
@@ -155,6 +162,35 @@ async function loadData() {
     }
   } finally {
     loading.value = false;
+  }
+}
+
+function openResetModal() {
+  resetConfirmationText.value = '';
+  showResetModal.value = true;
+}
+
+async function handleResetData() {
+  if (resetConfirmationText.value !== REQUIRED_CONFIRMATION) {
+    message.error(t('generalSettings.reset.invalidConfirmation'));
+    return;
+  }
+
+  isResetting.value = true;
+  try {
+    const result = await api.resetAllData(resetConfirmationText.value);
+    if (result.success) {
+      message.success(t('generalSettings.reset.success'));
+      showResetModal.value = false;
+      // Reload the page to reflect the reset
+      window.location.reload();
+    } else {
+      message.error(result.message);
+    }
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : t('generalSettings.reset.failed'));
+  } finally {
+    isResetting.value = false;
   }
 }
 
@@ -345,6 +381,51 @@ onMounted(() => {
           </NText>
         </NSpace>
       </NCard>
+
+      <NDivider />
+
+      <!-- Danger Zone Card -->
+      <NCard :title="t('generalSettings.reset.title')">
+        <NSpace vertical :size="16">
+          <NAlert type="error">
+            {{ t('generalSettings.reset.warning') }}
+          </NAlert>
+
+          <NSpace justify="end">
+            <NButton type="error" @click="openResetModal">
+              <template #icon>
+                <NIcon :component="TrashOutline" />
+              </template>
+              {{ t('generalSettings.reset.button') }}
+            </NButton>
+          </NSpace>
+        </NSpace>
+      </NCard>
     </NSpin>
+
+    <!-- Reset Confirmation Modal -->
+    <NModal
+      v-model:show="showResetModal"
+      preset="dialog"
+      :title="t('generalSettings.reset.modalTitle')"
+      :positive-text="t('generalSettings.reset.confirm')"
+      :negative-text="t('cancel')"
+      :positive-button-props="{ type: 'error', disabled: resetConfirmationText !== REQUIRED_CONFIRMATION, loading: isResetting }"
+      @positive-click="handleResetData"
+    >
+      <NSpace vertical :size="16">
+        <NText>{{ t('generalSettings.reset.modalDescription') }}</NText>
+        <NAlert type="warning">
+          {{ t('generalSettings.reset.modalWarning') }}
+        </NAlert>
+        <NFormItem :label="t('generalSettings.reset.typeToConfirm', { text: REQUIRED_CONFIRMATION })">
+          <NInput
+            v-model:value="resetConfirmationText"
+            :placeholder="REQUIRED_CONFIRMATION"
+            :status="resetConfirmationText && resetConfirmationText !== REQUIRED_CONFIRMATION ? 'error' : undefined"
+          />
+        </NFormItem>
+      </NSpace>
+    </NModal>
   </NSpace>
 </template>

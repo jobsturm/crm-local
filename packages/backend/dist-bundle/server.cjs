@@ -24956,6 +24956,28 @@ function createSettingsRoutes(storage) {
       }
     }
   );
+  router.post(
+    "/reset",
+    async (req, res, next) => {
+      try {
+        const { confirmationText } = req.body;
+        if (confirmationText !== "I want to reset") {
+          res.status(400).json({
+            success: false,
+            message: 'Invalid confirmation text. Please type "I want to reset" exactly.'
+          });
+          return;
+        }
+        await storage.resetAllData();
+        res.json({
+          success: true,
+          message: "All data has been reset successfully."
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
   return router;
 }
 
@@ -26244,6 +26266,30 @@ var StorageService = class {
       }
     }
     return newPath;
+  }
+  /**
+   * Reset all data - delete everything and start fresh
+   */
+  async resetAllData() {
+    try {
+      await (0, import_promises2.rm)(this.offersPath, { recursive: true, force: true });
+    } catch {
+    }
+    try {
+      await (0, import_promises2.rm)(this.invoicesPath, { recursive: true, force: true });
+    } catch {
+    }
+    await (0, import_promises2.mkdir)(this.offersPath, { recursive: true });
+    await (0, import_promises2.mkdir)(this.invoicesPath, { recursive: true });
+    this.database = {
+      ...EMPTY_DATABASE,
+      version: CURRENT_DATABASE_VERSION,
+      settings: {
+        ...EMPTY_DATABASE.settings,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    };
+    await this.saveDatabase();
   }
 };
 

@@ -22,6 +22,15 @@ interface ChangeStoragePathResponse {
   message?: string;
 }
 
+interface ResetDataRequest {
+  confirmationText: string;
+}
+
+interface ResetDataResponse {
+  success: boolean;
+  message: string;
+}
+
 export function createSettingsRoutes(storage: StorageService): Router {
   const router = Router();
 
@@ -132,6 +141,39 @@ export function createSettingsRoutes(storage: StorageService): Router {
           message: deleteOld
             ? 'Data moved to new location'
             : 'Data copied to new location (original files kept)',
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Reset all data
+  router.post(
+    '/reset',
+    async (
+      req: Request<object, ResetDataResponse, ResetDataRequest>,
+      res: Response<ResetDataResponse>,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const { confirmationText } = req.body;
+
+        // Verify confirmation text
+        if (confirmationText !== 'I want to reset') {
+          res.status(400).json({
+            success: false,
+            message: 'Invalid confirmation text. Please type "I want to reset" exactly.',
+          });
+          return;
+        }
+
+        // Perform reset
+        await storage.resetAllData();
+
+        res.json({
+          success: true,
+          message: 'All data has been reset successfully.',
         });
       } catch (error) {
         next(error);
