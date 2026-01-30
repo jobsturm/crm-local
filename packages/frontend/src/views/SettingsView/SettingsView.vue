@@ -9,7 +9,8 @@ import {
   NFormItem,
   NInput,
   NInputNumber,
-  NButton, // Still needed for Storage tab
+  NButton,
+  NButtonGroup,
   NSpace,
   NSpin,
   NText,
@@ -111,6 +112,9 @@ const previewDocTypeOptions = computed<SelectOption[]>(() => [
   { label: t('settings.preview.offer'), value: 'offer' },
 ]);
 
+// Preview mode: 'edit' (clickable fields) or 'view' (clean preview)
+const previewMode = ref<'edit' | 'view'>('edit');
+
 // Generate preview HTML - updates whenever any form changes
 const previewHTML = computed(() => {
   // Use actual business info if available, otherwise sample
@@ -131,8 +135,8 @@ const previewHTML = computed(() => {
     // Pass document number prefixes
     offerPrefix: settingsForm.value.offerPrefix,
     invoicePrefix: settingsForm.value.invoicePrefix,
-    // Enable interactive mode for clickable labels
-    interactive: true,
+    // Enable interactive mode only in edit mode
+    interactive: previewMode.value === 'edit',
   });
 });
 
@@ -800,12 +804,22 @@ onUnmounted(() => {
                     <NText strong>{{ t('settings.preview.title') }}</NText>
                     <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                  <NSelect
-                    v-model:value="previewDocType"
-                    :options="previewDocTypeOptions"
-                    size="small"
-                    style="width: 120px"
-                  />
+                  <NSpace :size="8">
+                    <NButtonGroup size="small">
+                      <NButton :type="previewMode === 'edit' ? 'primary' : 'default'" @click="previewMode = 'edit'">
+                        {{ t('settings.preview.edit') }}
+                      </NButton>
+                      <NButton :type="previewMode === 'view' ? 'primary' : 'default'" @click="previewMode = 'view'">
+                        {{ t('settings.preview.view') }}
+                      </NButton>
+                    </NButtonGroup>
+                    <NSelect
+                      v-model:value="previewDocType"
+                      :options="previewDocTypeOptions"
+                      size="small"
+                      style="width: 120px"
+                    />
+                  </NSpace>
                 </div>
                 <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
                   <iframe
@@ -893,12 +907,22 @@ onUnmounted(() => {
                     <NText strong>{{ t('settings.preview.title') }}</NText>
                     <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                  <NSelect
-                    v-model:value="previewDocType"
-                    :options="previewDocTypeOptions"
-                    size="small"
-                    style="width: 120px"
-                  />
+                  <NSpace :size="8">
+                    <NButtonGroup size="small">
+                      <NButton :type="previewMode === 'edit' ? 'primary' : 'default'" @click="previewMode = 'edit'">
+                        {{ t('settings.preview.edit') }}
+                      </NButton>
+                      <NButton :type="previewMode === 'view' ? 'primary' : 'default'" @click="previewMode = 'view'">
+                        {{ t('settings.preview.view') }}
+                      </NButton>
+                    </NButtonGroup>
+                    <NSelect
+                      v-model:value="previewDocType"
+                      :options="previewDocTypeOptions"
+                      size="small"
+                      style="width: 120px"
+                    />
+                  </NSpace>
                 </div>
                 <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
                   <iframe
@@ -1048,12 +1072,22 @@ onUnmounted(() => {
                     <NText strong>{{ t('settings.preview.title') }}</NText>
                     <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
                   </NSpace>
-                  <NSelect
-                    v-model:value="previewDocType"
-                    :options="previewDocTypeOptions"
-                    size="small"
-                    style="width: 120px"
-                  />
+                  <NSpace :size="8">
+                    <NButtonGroup size="small">
+                      <NButton :type="previewMode === 'edit' ? 'primary' : 'default'" @click="previewMode = 'edit'">
+                        {{ t('settings.preview.edit') }}
+                      </NButton>
+                      <NButton :type="previewMode === 'view' ? 'primary' : 'default'" @click="previewMode = 'view'">
+                        {{ t('settings.preview.view') }}
+                      </NButton>
+                    </NButtonGroup>
+                    <NSelect
+                      v-model:value="previewDocType"
+                      :options="previewDocTypeOptions"
+                      size="small"
+                      style="width: 120px"
+                    />
+                  </NSpace>
                 </div>
                 <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
                   <iframe

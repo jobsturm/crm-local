@@ -79,6 +79,8 @@ export const SettingsViewTranslations = {
     'settings.preview.title': 'Live Preview',
     'settings.preview.invoice': 'Invoice',
     'settings.preview.offer': 'Offer',
+    'settings.preview.edit': 'Edit',
+    'settings.preview.view': 'View',
     // Storage tab
     'settings.tab.storage': 'Storage',
     'settings.storage.infoTitle': 'Data Storage Location',
@@ -183,6 +185,8 @@ export const SettingsViewTranslations = {
     'settings.preview.title': 'Live Voorbeeld',
     'settings.preview.invoice': 'Factuur',
     'settings.preview.offer': 'Offerte',
+    'settings.preview.edit': 'Bewerk',
+    'settings.preview.view': 'Bekijk',
     // Storage tab
     'settings.tab.storage': 'Opslag',
     'settings.storage.infoTitle': 'Opslaglocatie',
