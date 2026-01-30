@@ -17,7 +17,10 @@ export class ApiError extends Error {
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  console.error('Error:', err);
+  // Only log errors in non-test environments (avoids noisy test output)
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Error:', err);
+  }
 
   if (err instanceof ApiError) {
     const response: ApiErrorDto = {
