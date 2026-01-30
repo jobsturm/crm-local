@@ -408,9 +408,20 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
                   size="small"
                 />
                 <NDivider style="margin: 8px 0" />
-                <NSpace justify="space-between">
-                  <NText strong>{{ t('financial.totalVat') }}</NText>
-                  <NText strong>{{ formatCurrency(overview.quarterSummary.totalVat) }}</NText>
+                <NSpace vertical :size="8">
+                  <NSpace justify="space-between">
+                    <NText strong>{{ t('financial.totalRevenueLabel') }}</NText>
+                    <NText strong>{{ formatCurrency(overview.quarterSummary.totalRevenue) }}</NText>
+                  </NSpace>
+                  <NSpace justify="space-between">
+                    <NText strong>{{ t('financial.totalVatLabel') }}</NText>
+                    <NText strong>{{ formatCurrency(overview.quarterSummary.totalVat) }}</NText>
+                  </NSpace>
+                  <NDivider style="margin: 4px 0" />
+                  <NSpace justify="space-between">
+                    <NText strong>{{ t('financial.grandTotalLabel') }}</NText>
+                    <NText strong>{{ formatCurrency(overview.quarterSummary.totalRevenue + overview.quarterSummary.totalVat) }}</NText>
+                  </NSpace>
                 </NSpace>
               </NSpace>
             </NCard>
