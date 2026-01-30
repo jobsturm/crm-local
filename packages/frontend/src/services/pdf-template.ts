@@ -49,8 +49,29 @@ Handlebars.registerHelper('editable', function (
   return text;
 });
 
-Handlebars.registerHelper('currency', function (amount: number, symbol: string) {
-  return `${symbol}${amount.toFixed(2)}`;
+Handlebars.registerHelper('currency', function (
+  this: unknown,
+  amount: number,
+  symbol: string,
+  options: Handlebars.HelperOptions
+) {
+  const root = getRootContext(options);
+  const formatted = `${symbol}${amount.toFixed(2)}`;
+  
+  // In interactive mode, make the currency symbol clickable
+  if (root.interactive) {
+    const escapedSymbol = Handlebars.escapeExpression(symbol);
+    const clickableSymbol = 
+      `<span class="editable" data-field="settings.currencySymbol" ` +
+      `style="cursor:pointer;border-bottom:1px dashed #3b82f6;transition:background 0.2s;" ` +
+      `onmouseover="this.style.background='#dbeafe'" ` +
+      `onmouseout="this.style.background='transparent'" ` +
+      `onclick="window.parent.postMessage({type:'editLabel',field:'settings.currencySymbol'},'*')"` +
+      `>${escapedSymbol}</span>`;
+    return new Handlebars.SafeString(`${clickableSymbol}${amount.toFixed(2)}`);
+  }
+  
+  return formatted;
 });
 
 Handlebars.registerHelper('formatNumber', function (amount: number) {
@@ -391,11 +412,11 @@ const templateSource = `<!DOCTYPE html>
         </div>
         <div class="total-row">
             <span>{{editable "taxLabel" labels.taxLabel}} ({{editable "settings.defaultTaxRate" document.taxRate}}%):</span>
-            <span>{{currencySymbol}}{{formatNumber document.taxAmount}}</span>
+            <span>{{editable "settings.currencySymbol" currencySymbol}}{{formatNumber document.taxAmount}}</span>
         </div>
         <div class="total-row final">
             <span>{{editable "totalLabel" labels.totalLabel}}:</span>
-            <span>{{currencySymbol}}{{formatNumber document.total}}</span>
+            <span>{{editable "settings.currencySymbol" currencySymbol}}{{formatNumber document.total}}</span>
         </div>
     </div>
 
