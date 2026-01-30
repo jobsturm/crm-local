@@ -37,9 +37,9 @@ echo "📝 Building frontend..."
 npm run build -w simpel-crm
 echo "✅ Frontend builds"
 
-# 5. Run backend tests
+# 5. Run backend tests (use test:run to avoid watch mode)
 echo "🧪 Running backend tests..."
-npm test -w @crm-local/backend --if-present || echo "⚠️ Tests not configured or failed"
+npm run test:run -w @crm-local/backend --if-present || echo "⚠️ Tests not configured or failed"
 
 # 6. Check for uncommitted changes
 echo "📋 Checking git status..."
