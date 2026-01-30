@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Type check shared package
+echo "📦 Type checking @crm-local/shared..."
+npm run build -w @crm-local/shared --silent || exit 1
+
+# Type check backend package  
+echo "📦 Type checking @crm-local/backend..."
+npm run build -w @crm-local/backend --silent || exit 1
+
+# Type check frontend (includes vue-tsc)
+echo "📦 Type checking simpel-crm (frontend)..."
+cd packages/frontend && npx vue-tsc --noEmit || exit 1
+cd ../..
+
+echo "✅ All checks passed!"
