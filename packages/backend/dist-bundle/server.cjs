@@ -24691,23 +24691,17 @@ function createBusinessRoutes(storage) {
             updatedAt: now
           };
         } else {
-          if (!data.name || !data.address || !data.phone || !data.email) {
-            res.status(400).json({
-              business: null
-            });
-            return;
-          }
           business = {
-            name: data.name,
-            address: {
+            name: data.name ?? "",
+            address: data.address ? {
               street: data.address.street ?? "",
               city: data.address.city ?? "",
               state: data.address.state ?? "",
               postalCode: data.address.postalCode ?? "",
               country: data.address.country ?? ""
-            },
-            phone: data.phone,
-            email: data.email,
+            } : { street: "", city: "", state: "", postalCode: "", country: "" },
+            phone: data.phone ?? "",
+            email: data.email ?? "",
             website: data.website,
             taxId: data.taxId,
             chamberOfCommerce: data.chamberOfCommerce,

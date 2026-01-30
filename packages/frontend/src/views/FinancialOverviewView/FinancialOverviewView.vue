@@ -345,7 +345,7 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
     <NSpin :show="loading">
       <NSpace v-if="overview" vertical :size="24">
         <!-- Key Metrics -->
-        <NGrid :cols="4" :x-gap="16" :y-gap="16">
+        <NGrid :cols="5" :x-gap="16" :y-gap="16">
           <NGridItem>
             <NCard>
               <NStatistic :label="t('financial.totalRevenue')" :value="formatCurrency(overview.quarterSummary.totalRevenue)" />
@@ -356,6 +356,12 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
             <NCard>
               <NStatistic :label="t('financial.totalVat')" :value="formatCurrency(overview.quarterSummary.totalVat)" />
               <NText depth="3" style="font-size: 12px">{{ t('financial.totalVatHelp') }}</NText>
+            </NCard>
+          </NGridItem>
+          <NGridItem>
+            <NCard>
+              <NStatistic :label="t('financial.totalIncludingVat')" :value="formatCurrency(overview.quarterSummary.totalRevenue + overview.quarterSummary.totalVat)" />
+              <NText depth="3" style="font-size: 12px">{{ t('financial.totalIncludingVatHelp') }}</NText>
             </NCard>
           </NGridItem>
           <NGridItem>
