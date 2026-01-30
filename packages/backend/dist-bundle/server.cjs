@@ -24982,17 +24982,77 @@ function getQuarterFromMonth(month, fiscalYearStart) {
   if (fiscalMonth < 9) return "Q3";
   return "Q4";
 }
-function getQuarterDateRange(quarter, year, _fiscalYearStart) {
-  const quarterIndex = parseInt(quarter.charAt(1)) - 1;
-  const startMonth = quarterIndex * 3;
-  const endMonth = startMonth + 2;
-  const startDate = new Date(year, startMonth, 1);
-  const endDate = new Date(year, endMonth + 1, 0);
-  return { startDate, endDate };
-}
 function getCurrentQuarter(fiscalYearStart) {
   const now = /* @__PURE__ */ new Date();
   return getQuarterFromMonth(now.getMonth() + 1, fiscalYearStart);
+}
+function resolveDateRange(preset, year, startDateStr, endDateStr) {
+  const now = /* @__PURE__ */ new Date();
+  const currentYear = now.getFullYear();
+  switch (preset) {
+    case "Q1":
+      return {
+        startDate: new Date(year, 0, 1),
+        endDate: new Date(year, 2, 31),
+        label: `Q1 ${year}`
+      };
+    case "Q2":
+      return {
+        startDate: new Date(year, 3, 1),
+        endDate: new Date(year, 5, 30),
+        label: `Q2 ${year}`
+      };
+    case "Q3":
+      return {
+        startDate: new Date(year, 6, 1),
+        endDate: new Date(year, 8, 30),
+        label: `Q3 ${year}`
+      };
+    case "Q4":
+      return {
+        startDate: new Date(year, 9, 1),
+        endDate: new Date(year, 11, 31),
+        label: `Q4 ${year}`
+      };
+    case "thisYear":
+      return {
+        startDate: new Date(currentYear, 0, 1),
+        endDate: new Date(currentYear, 11, 31),
+        label: `${currentYear}`
+      };
+    case "yearToDate":
+      return {
+        startDate: new Date(currentYear, 0, 1),
+        endDate: now,
+        label: `YTD ${currentYear}`
+      };
+    case "allTime":
+      return {
+        startDate: new Date(2e3, 0, 1),
+        // Placeholder - refined later
+        endDate: now,
+        // At most until today
+        label: "All Time"
+      };
+    case "custom":
+      if (startDateStr && endDateStr) {
+        return {
+          startDate: new Date(startDateStr),
+          endDate: new Date(endDateStr),
+          label: "Custom Range"
+        };
+      }
+      break;
+    default:
+      break;
+  }
+  const currentQuarter = getCurrentQuarter(1);
+  const qIndex = parseInt(currentQuarter.charAt(1)) - 1;
+  return {
+    startDate: new Date(currentYear, qIndex * 3, 1),
+    endDate: new Date(currentYear, qIndex * 3 + 3, 0),
+    label: `${currentQuarter} ${currentYear}`
+  };
 }
 function createFinancialRoutes(storage) {
   const router = (0, import_express5.Router)();
@@ -25003,36 +25063,65 @@ function createFinancialRoutes(storage) {
         const db = storage.getDatabase();
         const fiscalYearStartMonth = db.settings.fiscalYearStartMonth ?? DEFAULT_SETTINGS.fiscalYearStartMonth;
         const year = req.query.year ? parseInt(req.query.year) : (/* @__PURE__ */ new Date()).getFullYear();
-        const quarter = req.query.quarter ?? getCurrentQuarter(fiscalYearStartMonth);
+        const preset = req.query.preset;
+        let dateRange;
+        if (preset) {
+          dateRange = resolveDateRange(preset, year, req.query.startDate, req.query.endDate);
+        } else if (req.query.quarter) {
+          dateRange = resolveDateRange(req.query.quarter, year);
+        } else {
+          dateRange = resolveDateRange(getCurrentQuarter(fiscalYearStartMonth), year);
+        }
         const allInvoices = await storage.listDocuments("invoice");
+        if (preset === "allTime" && allInvoices.length > 0) {
+          const invoiceDates = allInvoices.map((inv) => new Date(inv.createdAt).getTime());
+          const minDate = new Date(Math.min(...invoiceDates));
+          const maxDate = new Date(Math.max(...invoiceDates));
+          dateRange.startDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+          const now = /* @__PURE__ */ new Date();
+          const latestEndDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+          const currentEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          dateRange.endDate = latestEndDate > currentEndDate ? latestEndDate : currentEndDate;
+        }
+        const filteredInvoices = allInvoices.filter((inv) => {
+          const invDate = new Date(inv.createdAt);
+          return invDate >= dateRange.startDate && invDate <= dateRange.endDate;
+        });
         const yearInvoices = allInvoices.filter((inv) => {
           const invDate = new Date(inv.createdAt);
           return invDate.getFullYear() === year;
         });
-        const quarterSummary = calculateQuarterSummary(
-          yearInvoices,
-          quarter,
-          year,
-          fiscalYearStartMonth
+        const quarterSummary = calculatePeriodSummary(
+          filteredInvoices,
+          dateRange.startDate,
+          dateRange.endDate,
+          dateRange.label
         );
         const monthlyRevenue = calculateMonthlyRevenue(yearInvoices, year);
         const ytdStats = calculateYTDStats(yearInvoices);
-        const aging = calculateAging(yearInvoices);
-        const statusBreakdown = calculateStatusBreakdown(yearInvoices);
-        const prevYearFiltered = allInvoices.filter((inv) => {
+        const aging = calculateAging(allInvoices);
+        const statusBreakdown = calculateStatusBreakdown(filteredInvoices);
+        const periodDuration = dateRange.endDate.getTime() - dateRange.startDate.getTime();
+        const prevPeriodEnd = new Date(dateRange.startDate.getTime() - 1);
+        const prevPeriodStart = new Date(prevPeriodEnd.getTime() - periodDuration);
+        const prevPeriodInvoices = allInvoices.filter((inv) => {
           const invDate = new Date(inv.createdAt);
-          return invDate.getFullYear() === year - 1;
+          return invDate >= prevPeriodStart && invDate <= prevPeriodEnd;
         });
-        const previousYearComparison = calculatePreviousYearComparison(
+        const previousYearComparison = calculatePreviousYearComparisonFromPeriod(
           quarterSummary,
-          prevYearFiltered,
-          quarter,
-          year - 1,
-          fiscalYearStartMonth
+          prevPeriodInvoices
+        );
+        const { granularity, data: timeSeriesRevenue } = calculateTimeSeriesRevenue(
+          filteredInvoices,
+          dateRange.startDate,
+          dateRange.endDate
         );
         const overview = {
           quarterSummary,
           monthlyRevenue,
+          timeSeriesRevenue,
+          timeSeriesGranularity: granularity,
           ytdRevenue: ytdStats.revenue,
           ytdVat: ytdStats.vat,
           ytdInvoiceCount: ytdStats.count,
@@ -25049,12 +25138,7 @@ function createFinancialRoutes(storage) {
   );
   return router;
 }
-function calculateQuarterSummary(invoices, quarter, year, fiscalYearStart) {
-  const { startDate, endDate } = getQuarterDateRange(quarter, year, fiscalYearStart);
-  const quarterInvoices = invoices.filter((inv) => {
-    const invDate = new Date(inv.createdAt);
-    return invDate >= startDate && invDate <= endDate;
-  });
+function calculatePeriodSummary(invoices, startDate, endDate, label) {
   let totalRevenue = 0;
   let totalVat = 0;
   let paidAmount = 0;
@@ -25062,16 +25146,16 @@ function calculateQuarterSummary(invoices, quarter, year, fiscalYearStart) {
   let overdueAmount = 0;
   const vatByRate = /* @__PURE__ */ new Map();
   const now = /* @__PURE__ */ new Date();
-  for (const inv of quarterInvoices) {
-    totalRevenue += inv.subtotal;
-    totalVat += inv.taxAmount;
-    const rate = inv.taxRate;
-    const existing = vatByRate.get(rate) ?? { revenue: 0, vat: 0 };
-    existing.revenue += inv.subtotal;
-    existing.vat += inv.taxAmount;
-    vatByRate.set(rate, existing);
+  for (const inv of invoices) {
     if (inv.status === "paid") {
+      totalRevenue += inv.subtotal;
+      totalVat += inv.taxAmount;
       paidAmount += inv.total;
+      const rate = inv.taxRate;
+      const existing = vatByRate.get(rate) ?? { revenue: 0, vat: 0 };
+      existing.revenue += inv.subtotal;
+      existing.vat += inv.taxAmount;
+      vatByRate.set(rate, existing);
     } else if (inv.status !== "cancelled" && inv.status !== "draft") {
       outstandingAmount += inv.total;
       const dueDate = new Date(inv.dueDate);
@@ -25085,6 +25169,8 @@ function calculateQuarterSummary(invoices, quarter, year, fiscalYearStart) {
     revenue: data.revenue,
     vatAmount: data.vat
   })).sort((a, b) => b.rate - a.rate);
+  const quarter = label.match(/Q[1-4]/)?.[0] ?? "Q1";
+  const year = startDate.getFullYear();
   return {
     quarter,
     year,
@@ -25093,10 +25179,26 @@ function calculateQuarterSummary(invoices, quarter, year, fiscalYearStart) {
     totalRevenue,
     totalVat,
     vatBreakdown,
-    invoiceCount: quarterInvoices.length,
+    invoiceCount: invoices.length,
     paidAmount,
     outstandingAmount,
     overdueAmount
+  };
+}
+function calculatePreviousYearComparisonFromPeriod(currentPeriod, previousPeriodInvoices) {
+  let prevRevenue = 0;
+  for (const inv of previousPeriodInvoices) {
+    if (inv.status === "paid") {
+      prevRevenue += inv.subtotal;
+    }
+  }
+  if (prevRevenue === 0) {
+    return void 0;
+  }
+  const percentageChange = (currentPeriod.totalRevenue - prevRevenue) / prevRevenue * 100;
+  return {
+    revenue: prevRevenue,
+    percentageChange
   };
 }
 function calculateMonthlyRevenue(invoices, year) {
@@ -25111,9 +25213,9 @@ function calculateMonthlyRevenue(invoices, year) {
     let paidAmount = 0;
     let outstandingAmount = 0;
     for (const inv of monthInvoices) {
-      revenue += inv.subtotal;
-      vatAmount += inv.taxAmount;
       if (inv.status === "paid") {
+        revenue += inv.subtotal;
+        vatAmount += inv.taxAmount;
         paidAmount += inv.total;
       } else if (inv.status !== "cancelled" && inv.status !== "draft") {
         outstandingAmount += inv.total;
@@ -25132,20 +25234,101 @@ function calculateMonthlyRevenue(invoices, year) {
   }
   return monthlyData;
 }
+function determineGranularity(startDate, endDate) {
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const diffDays = diffMs / (1e3 * 60 * 60 * 24);
+  const diffWeeks = diffDays / 7;
+  const diffMonths = diffDays / 30;
+  if (diffWeeks < 4) {
+    return "day";
+  } else if (diffMonths < 4) {
+    return "week";
+  } else {
+    return "month";
+  }
+}
+function calculateTimeSeriesRevenue(invoices, startDate, endDate) {
+  const granularity = determineGranularity(startDate, endDate);
+  const data = [];
+  const periods = [];
+  let current = new Date(startDate);
+  if (granularity === "day") {
+    while (current <= endDate) {
+      const periodStart = new Date(current);
+      const periodEnd = new Date(current);
+      periodEnd.setHours(23, 59, 59, 999);
+      const label = periodStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      periods.push({ start: periodStart, end: periodEnd, label });
+      current.setDate(current.getDate() + 1);
+    }
+  } else if (granularity === "week") {
+    const dayOfWeek = current.getDay();
+    current.setDate(current.getDate() - dayOfWeek);
+    let weekNum = 1;
+    while (current <= endDate) {
+      const periodStart = new Date(current);
+      const periodEnd = new Date(current);
+      periodEnd.setDate(periodEnd.getDate() + 6);
+      periodEnd.setHours(23, 59, 59, 999);
+      const label = `Week ${weekNum}`;
+      periods.push({ start: periodStart, end: periodEnd, label });
+      current.setDate(current.getDate() + 7);
+      weekNum++;
+    }
+  } else {
+    current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (current <= endDate) {
+      const periodStart = new Date(current);
+      const periodEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+      periodEnd.setHours(23, 59, 59, 999);
+      const label = periodStart.toLocaleDateString("en-US", { month: "short" });
+      periods.push({ start: periodStart, end: periodEnd, label });
+      current.setMonth(current.getMonth() + 1);
+    }
+  }
+  for (const period of periods) {
+    const periodInvoices = invoices.filter((inv) => {
+      const invDate = new Date(inv.createdAt);
+      return invDate >= period.start && invDate <= period.end;
+    });
+    let revenue = 0;
+    let vatAmount = 0;
+    let paidAmount = 0;
+    let outstandingAmount = 0;
+    for (const inv of periodInvoices) {
+      if (inv.status === "paid") {
+        revenue += inv.subtotal;
+        vatAmount += inv.taxAmount;
+        paidAmount += inv.total;
+      } else if (inv.status !== "cancelled" && inv.status !== "draft") {
+        outstandingAmount += inv.total;
+      }
+    }
+    data.push({
+      label: period.label,
+      startDate: period.start.toISOString(),
+      endDate: period.end.toISOString(),
+      revenue,
+      vatAmount,
+      invoiceCount: periodInvoices.length,
+      paidAmount,
+      outstandingAmount
+    });
+  }
+  return { granularity, data };
+}
 function calculateYTDStats(invoices) {
   let revenue = 0;
   let vat = 0;
+  let count = 0;
   for (const inv of invoices) {
-    if (inv.status !== "cancelled" && inv.status !== "draft") {
+    if (inv.status === "paid") {
       revenue += inv.subtotal;
       vat += inv.taxAmount;
+      count++;
     }
   }
-  return {
-    revenue,
-    vat,
-    count: invoices.filter((inv) => inv.status !== "cancelled" && inv.status !== "draft").length
-  };
+  return { revenue, vat, count };
 }
 function calculateAging(invoices) {
   const now = /* @__PURE__ */ new Date();
@@ -25193,22 +25376,6 @@ function calculateStatusBreakdown(invoices) {
     count: data.count,
     amount: data.amount
   }));
-}
-function calculatePreviousYearComparison(currentQuarter, previousYearInvoices, quarter, previousYear, fiscalYearStart) {
-  const prevQuarterSummary = calculateQuarterSummary(
-    previousYearInvoices,
-    quarter,
-    previousYear,
-    fiscalYearStart
-  );
-  if (prevQuarterSummary.totalRevenue === 0) {
-    return void 0;
-  }
-  const percentageChange = (currentQuarter.totalRevenue - prevQuarterSummary.totalRevenue) / prevQuarterSummary.totalRevenue * 100;
-  return {
-    revenue: prevQuarterSummary.totalRevenue,
-    percentageChange
-  };
 }
 
 // src/routes/dashboard.routes.ts

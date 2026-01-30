@@ -5,7 +5,30 @@
 /** Quarter identifier */
 export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
-/** Monthly revenue data */
+/** Time granularity for chart data */
+export type TimeGranularity = 'day' | 'week' | 'month';
+
+/** Time-series revenue data point (can be day, week, or month) */
+export interface TimeSeriesRevenueDto {
+  /** Label for display (e.g., "Jan", "Week 1", "Jan 15") */
+  label: string;
+  /** Start date of this period */
+  startDate: string;
+  /** End date of this period */
+  endDate: string;
+  /** Total revenue (excl. VAT) */
+  revenue: number;
+  /** Total VAT amount */
+  vatAmount: number;
+  /** Number of invoices */
+  invoiceCount: number;
+  /** Paid amount */
+  paidAmount: number;
+  /** Outstanding amount */
+  outstandingAmount: number;
+}
+
+/** Monthly revenue data (legacy, kept for compatibility) */
 export interface MonthlyRevenueDto {
   /** Month (1-12) */
   month: number;
@@ -84,8 +107,12 @@ export interface InvoiceStatusBreakdownDto {
 export interface FinancialOverviewDto {
   /** Selected quarter summary */
   quarterSummary: QuarterlyBtwSummaryDto;
-  /** Monthly breakdown for the year */
+  /** Monthly breakdown for the year (legacy) */
   monthlyRevenue: MonthlyRevenueDto[];
+  /** Time-series data with appropriate granularity */
+  timeSeriesRevenue: TimeSeriesRevenueDto[];
+  /** Granularity of time-series data */
+  timeSeriesGranularity: TimeGranularity;
   /** Year-to-date totals */
   ytdRevenue: number;
   ytdVat: number;

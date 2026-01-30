@@ -74,6 +74,8 @@ export { DEFAULT_LABELS, DUTCH_LABELS, DEFAULT_SETTINGS } from './settings.dto';
 // Financial DTOs
 export type {
   Quarter,
+  TimeGranularity,
+  TimeSeriesRevenueDto,
   MonthlyRevenueDto,
   VatBreakdownDto,
   QuarterlyBtwSummaryDto,

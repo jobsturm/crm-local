@@ -13,6 +13,7 @@ import {
   NDataTable,
   NDivider,
   NTag,
+  NDatePicker,
   type SelectOption,
   type DataTableColumns,
 } from 'naive-ui';
@@ -28,11 +29,11 @@ import {
 } from 'echarts/components';
 import type {
   FinancialOverviewDto,
-  Quarter,
   VatBreakdownDto,
   AgingBucketDto,
 } from '@crm-local/shared';
 import * as api from '@/api/client';
+import type { DatePreset } from '@/api/client';
 
 // Register ECharts components
 use([
@@ -51,10 +52,32 @@ const { t } = useI18n();
 // State
 const loading = ref(false);
 const overview = ref<FinancialOverviewDto | null>(null);
+const selectedPreset = ref<DatePreset>(getCurrentQuarter());
 const selectedYear = ref(new Date().getFullYear());
-const selectedQuarter = ref<Quarter>(getCurrentQuarter());
+const customDateRange = ref<[number, number] | null>(null);
 
-// Options
+// Get current quarter
+function getCurrentQuarter(): DatePreset {
+  const month = new Date().getMonth();
+  if (month < 3) return 'Q1';
+  if (month < 6) return 'Q2';
+  if (month < 9) return 'Q3';
+  return 'Q4';
+}
+
+// Preset options
+const presetOptions = computed<SelectOption[]>(() => [
+  { label: t('financial.presets.q1', { year: selectedYear.value }), value: 'Q1' },
+  { label: t('financial.presets.q2', { year: selectedYear.value }), value: 'Q2' },
+  { label: t('financial.presets.q3', { year: selectedYear.value }), value: 'Q3' },
+  { label: t('financial.presets.q4', { year: selectedYear.value }), value: 'Q4' },
+  { label: t('financial.presets.thisYear'), value: 'thisYear' },
+  { label: t('financial.presets.yearToDate'), value: 'yearToDate' },
+  { label: t('financial.presets.allTime'), value: 'allTime' },
+  { label: t('financial.presets.custom'), value: 'custom' },
+]);
+
+// Year options for year selector
 const yearOptions = computed<SelectOption[]>(() => {
   const currentYear = new Date().getFullYear();
   const years: SelectOption[] = [];
@@ -64,20 +87,13 @@ const yearOptions = computed<SelectOption[]>(() => {
   return years;
 });
 
-const quarterOptions = computed<SelectOption[]>(() => [
-  { label: t('financial.q1'), value: 'Q1' },
-  { label: t('financial.q2'), value: 'Q2' },
-  { label: t('financial.q3'), value: 'Q3' },
-  { label: t('financial.q4'), value: 'Q4' },
-]);
+// Check if we need to show year selector (for quarter presets)
+const showYearSelector = computed(() => 
+  ['Q1', 'Q2', 'Q3', 'Q4'].includes(selectedPreset.value)
+);
 
-function getCurrentQuarter(): Quarter {
-  const month = new Date().getMonth();
-  if (month < 3) return 'Q1';
-  if (month < 6) return 'Q2';
-  if (month < 9) return 'Q3';
-  return 'Q4';
-}
+// Check if we need to show custom date picker
+const showCustomDatePicker = computed(() => selectedPreset.value === 'custom');
 
 // Format helpers
 function formatCurrency(amount: number): string {
@@ -96,7 +112,18 @@ function formatPercentage(value: number): string {
 async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    overview.value = await api.getFinancialOverview(selectedYear.value, selectedQuarter.value);
+    const params: api.FinancialOverviewParams = {
+      preset: selectedPreset.value,
+      year: selectedYear.value,
+    };
+    
+    // Add custom date range if selected
+    if (selectedPreset.value === 'custom' && customDateRange.value) {
+      params.startDate = new Date(customDateRange.value[0]).toISOString();
+      params.endDate = new Date(customDateRange.value[1]).toISOString();
+    }
+    
+    overview.value = await api.getFinancialOverview(params);
   } catch {
     overview.value = null;
   } finally {
@@ -105,44 +132,41 @@ async function loadData(): Promise<void> {
 }
 
 // Watch for filter changes
-watch([selectedYear, selectedQuarter], () => {
-  void loadData();
+watch([selectedPreset, selectedYear, customDateRange], () => {
+  // Only load if we have valid custom dates or not in custom mode
+  if (selectedPreset.value !== 'custom' || customDateRange.value) {
+    void loadData();
+  }
 });
 
 onMounted(() => {
   void loadData();
 });
 
-// Get months for the selected quarter
-function getQuarterMonthRange(quarter: Quarter): [number, number, number] {
-  switch (quarter) {
-    case 'Q1': return [1, 2, 3];
-    case 'Q2': return [4, 5, 6];
-    case 'Q3': return [7, 8, 9];
-    case 'Q4': return [10, 11, 12];
+// Get the chart title based on granularity
+const revenueChartTitle = computed(() => {
+  if (!overview.value) return t('financial.quarterlyRevenue');
+  const granularity = overview.value.timeSeriesGranularity;
+  switch (granularity) {
+    case 'day': return t('financial.dailyRevenue');
+    case 'week': return t('financial.weeklyRevenue');
+    default: return t('financial.monthlyRevenue');
   }
-}
-
-// Filter monthly data to selected quarter
-const quarterMonthlyRevenue = computed(() => {
-  if (!overview.value) return [];
-  const quarterMonths = getQuarterMonthRange(selectedQuarter.value);
-  return overview.value.monthlyRevenue.filter((m) => quarterMonths.includes(m.month));
 });
 
-// Chart options
+// Chart options - uses timeSeriesRevenue with dynamic granularity
 const revenueChartOptions = computed(() => {
   if (!overview.value) return {};
   
-  const months = quarterMonthlyRevenue.value;
+  const timeSeries = overview.value.timeSeriesRevenue;
   
   return {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: Array<{ name: string; value: number; seriesName: string }>) => {
-        const month = params[0]?.name ?? '';
-        let html = `<strong>${month}</strong><br/>`;
+        const label = params[0]?.name ?? '';
+        let html = `<strong>${label}</strong><br/>`;
         params.forEach((p) => {
           html += `${p.seriesName}: ${formatCurrency(p.value)}<br/>`;
         });
@@ -162,7 +186,12 @@ const revenueChartOptions = computed(() => {
     },
     xAxis: {
       type: 'category',
-      data: months.map((m) => m.monthName),
+      data: timeSeries.map((d) => d.label),
+      axisLabel: {
+        // Rotate labels if there are many data points
+        rotate: timeSeries.length > 12 ? 45 : 0,
+        interval: timeSeries.length > 31 ? 'auto' : 0,
+      },
     },
     yAxis: {
       type: 'value',
@@ -174,13 +203,13 @@ const revenueChartOptions = computed(() => {
       {
         name: t('financial.revenue'),
         type: 'bar',
-        data: months.map((m) => m.revenue),
+        data: timeSeries.map((d) => d.revenue),
         itemStyle: { color: '#18a058' },
       },
       {
         name: t('financial.vat'),
         type: 'bar',
-        data: months.map((m) => m.vatAmount),
+        data: timeSeries.map((d) => d.vatAmount),
         itemStyle: { color: '#2080f0' },
       },
     ],
@@ -288,16 +317,25 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
         <NText tag="h1" strong style="font-size: 24px; margin: 0">
           {{ t('financial.title') }}
         </NText>
-        <NSpace :size="12">
+        <NSpace :size="12" align="center">
           <NSelect
+            v-model:value="selectedPreset"
+            :options="presetOptions"
+            style="width: 180px"
+          />
+          <NSelect
+            v-if="showYearSelector"
             v-model:value="selectedYear"
             :options="yearOptions"
             style="width: 100px"
           />
-          <NSelect
-            v-model:value="selectedQuarter"
-            :options="quarterOptions"
-            style="width: 150px"
+          <NDatePicker
+            v-if="showCustomDatePicker"
+            v-model:value="customDateRange"
+            type="daterange"
+            clearable
+            :placeholder="t('financial.selectDateRange')"
+            style="width: 280px"
           />
         </NSpace>
       </NSpace>
@@ -305,7 +343,7 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
     </NSpace>
 
     <NSpin :show="loading">
-      <template v-if="overview">
+      <NSpace v-if="overview" vertical :size="24">
         <!-- Key Metrics -->
         <NGrid :cols="4" :x-gap="16" :y-gap="16">
           <NGridItem>
@@ -341,10 +379,10 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
 
         <NDivider />
 
-        <!-- Monthly Revenue Chart -->
-        <NCard :title="t('financial.quarterlyRevenue')">
+        <!-- Revenue Chart (day/week/month based on date range) -->
+        <NCard :title="revenueChartTitle">
           <template #header-extra>
-            <NText depth="3" style="font-size: 12px">{{ t('financial.quarterlyRevenueDescription') }}</NText>
+            <NText depth="3" style="font-size: 12px">{{ t('financial.revenueChartDescription') }}</NText>
           </template>
           <VChart :option="revenueChartOptions" style="height: 300px" autoresize />
         </NCard>
@@ -427,7 +465,7 @@ const agingColumns = computed<DataTableColumns<AgingBucketDto>>(() => [
             </NCard>
           </NGridItem>
         </NGrid>
-      </template>
+      </NSpace>
 
       <NCard v-else-if="!loading">
         <NText>{{ t('financial.noData') }}</NText>

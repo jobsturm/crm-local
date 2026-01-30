@@ -252,14 +252,26 @@ export async function convertOfferToInvoice(offerId: string): Promise<DocumentDt
 
 // ============ Financial ============
 
+export type DatePreset = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'thisYear' | 'yearToDate' | 'allTime' | 'custom';
+
+export interface FinancialOverviewParams {
+  year?: number;
+  quarter?: Quarter;
+  preset?: DatePreset;
+  startDate?: string;
+  endDate?: string;
+}
+
 export async function getFinancialOverview(
-  year?: number,
-  quarter?: Quarter
+  params?: FinancialOverviewParams
 ): Promise<FinancialOverviewDto> {
-  const params = new URLSearchParams();
-  if (year !== undefined) params.set('year', String(year));
-  if (quarter !== undefined) params.set('quarter', quarter);
-  const query = params.toString() ? `?${params.toString()}` : '';
+  const searchParams = new URLSearchParams();
+  if (params?.year !== undefined) searchParams.set('year', String(params.year));
+  if (params?.quarter !== undefined) searchParams.set('quarter', params.quarter);
+  if (params?.preset !== undefined) searchParams.set('preset', params.preset);
+  if (params?.startDate !== undefined) searchParams.set('startDate', params.startDate);
+  if (params?.endDate !== undefined) searchParams.set('endDate', params.endDate);
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
   const res = await request<FinancialOverviewResponseDto>(`/financial/overview${query}`);
   return res.overview;
 }
