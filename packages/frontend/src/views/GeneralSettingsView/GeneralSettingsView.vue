@@ -18,7 +18,8 @@ import {
   useMessage,
   useDialog,
 } from 'naive-ui';
-import { SunnyOutline, MoonOutline, DesktopOutline, LanguageOutline } from '@vicons/ionicons5';
+import { SunnyOutline, MoonOutline, DesktopOutline } from '@vicons/ionicons5';
+import FlagIcon from '@/components/icons/FlagIcon.vue';
 import type { ThemePreference, LanguagePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
 import { useTheme } from '@/composables/useTheme';
@@ -48,10 +49,10 @@ function handleThemeChange(value: ThemePreference) {
   void setThemePreference(value);
 }
 
-// Language options
-const languageOptions: Array<{ value: LanguagePreference; label: string; nativeLabel: string }> = [
-  { value: 'en-US', label: 'English', nativeLabel: 'English' },
-  { value: 'nl-NL', label: 'Dutch', nativeLabel: 'Nederlands' },
+// Language options with flag codes
+const languageOptions: Array<{ value: LanguagePreference; nativeLabel: string; flagCode: 'gb' | 'nl' }> = [
+  { value: 'en-US', nativeLabel: 'English', flagCode: 'gb' },
+  { value: 'nl-NL', nativeLabel: 'Nederlands', flagCode: 'nl' },
 ];
 
 const currentLanguage = computed(() => (locale.value as LanguagePreference) || 'en-US');
@@ -192,7 +193,7 @@ onMounted(() => {
                 style="padding: 12px 20px;"
               >
                 <NSpace align="center" :size="8">
-                  <NIcon :component="LanguageOutline" :size="18" />
+                  <FlagIcon :code="option.flagCode" :size="20" />
                   <span>{{ option.nativeLabel }}</span>
                 </NSpace>
               </NRadioButton>
