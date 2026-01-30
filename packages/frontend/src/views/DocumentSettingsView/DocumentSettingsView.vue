@@ -217,7 +217,7 @@ onUnmounted(() => {
             <div style="flex: 1; overflow: auto; padding: 16px; background: #e8e8e8;">
               <iframe
                 :src="previewDataUrl"
-                style="display: block; width: 100%; height: 1200px; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+                style="display: block; width: 100%; min-width: 400px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
               />
             </div>
           </div>
