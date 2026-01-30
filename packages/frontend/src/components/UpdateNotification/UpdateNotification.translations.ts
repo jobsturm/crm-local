@@ -1,0 +1,26 @@
+export const updateTranslations = {
+  'en-US': {
+    'update.availableTitle': 'Update Available',
+    'update.downloadingTitle': 'Downloading Update',
+    'update.readyTitle': 'Update Ready',
+    'update.newVersionAvailable': 'Version {version} is available.',
+    'update.downloading': 'Downloading update...',
+    'update.readyToInstall': 'Version {version} is ready to install.',
+    'update.download': 'Download',
+    'update.installNow': 'Install & Restart',
+    'update.later': 'Later',
+    'update.error': 'Update Error',
+  },
+  'nl-NL': {
+    'update.availableTitle': 'Update Beschikbaar',
+    'update.downloadingTitle': 'Update Downloaden',
+    'update.readyTitle': 'Update Gereed',
+    'update.newVersionAvailable': 'Versie {version} is beschikbaar.',
+    'update.downloading': 'Update wordt gedownload...',
+    'update.readyToInstall': 'Versie {version} is klaar om te installeren.',
+    'update.download': 'Downloaden',
+    'update.installNow': 'Installeren & Herstarten',
+    'update.later': 'Later',
+    'update.error': 'Update Fout',
+  },
+};

@@ -1,0 +1,191 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (without v prefix)'
+        required: false
+        default: ''
+
+jobs:
+  # Sanity checks before building
+  sanity-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check shared
+        run: npm run build -w @crm-local/shared
+
+      - name: Type check backend
+        run: npm run build -w @crm-local/backend
+
+      - name: Type check and build frontend
+        run: npm run build -w simpel-crm
+
+      - name: Run tests
+        run: npm test -w @crm-local/backend || true
+
+  # Build for macOS
+  build-macos:
+    needs: sanity-check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared
+        run: npm run build -w @crm-local/shared
+
+      - name: Build app
+        run: npm run electron:build:mac -w simpel-crm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: |
+            packages/frontend/release/*.dmg
+            packages/frontend/release/*.zip
+            packages/frontend/release/latest-mac.yml
+
+  # Build for Windows
+  build-windows:
+    needs: sanity-check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared
+        run: npm run build -w @crm-local/shared
+
+      - name: Build app
+        run: npm run electron:build:win -w simpel-crm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            packages/frontend/release/*.exe
+            packages/frontend/release/latest.yml
+
+  # Build for Linux
+  build-linux:
+    needs: sanity-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared
+        run: npm run build -w @crm-local/shared
+
+      - name: Build app
+        run: npm run electron:build:linux -w simpel-crm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            packages/frontend/release/*.AppImage
+            packages/frontend/release/*.deb
+            packages/frontend/release/latest-linux.yml
+
+  # Create release and upload all artifacts
+  release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Simpel CRM v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
+            artifacts/**/*.exe
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/latest*.yml
+          body: |
+            ## Simpel CRM v${{ steps.get_version.outputs.version }}
+            
+            ### Downloads
+            - **macOS**: Download the `.dmg` file (Universal - works on Intel and Apple Silicon)
+            - **Windows**: Download the `.exe` installer
+            - **Linux**: Download the `.AppImage` or `.deb` file
+            
+            ### What's New
+            See the [changelog](https://github.com/jobsturm/crm-local/blob/master/CHANGELOG.md) for details.
+            
+            ### Auto-Update
+            If you already have Simpel CRM installed, it will automatically notify you of this update.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -35,6 +35,14 @@ interface PDFGenerateResult {
   error?: string;
 }
 
+interface UpdateInfo {
+  version: string;
+  releaseNotes?: string;
+  releaseDate?: string;
+}
+
+type UpdaterEventCallback = (data?: unknown) => void;
+
 // Expose the API to the renderer
 contextBridge.exposeInMainWorld('electronAPI', {
   /**
@@ -59,16 +67,55 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   /**
-   * Get app version
+   * Get app version from main process
    */
-  getVersion: (): string => {
-    return process.env.npm_package_version ?? '1.0.0';
+  getVersion: (): Promise<string> => {
+    return ipcRenderer.invoke('app:version');
   },
 
   /**
    * Platform info
    */
   platform: process.platform,
+
+  // ============================================================
+  // Auto-Updater API
+  // ============================================================
+
+  /**
+   * Check for updates
+   */
+  checkForUpdates: (): Promise<{ success: boolean; updateInfo?: UpdateInfo; error?: string }> => {
+    return ipcRenderer.invoke('updater:check');
+  },
+
+  /**
+   * Download the available update
+   */
+  downloadUpdate: (): Promise<{ success: boolean; error?: string }> => {
+    return ipcRenderer.invoke('updater:download');
+  },
+
+  /**
+   * Install the downloaded update and restart
+   */
+  installUpdate: (): void => {
+    ipcRenderer.invoke('updater:install');
+  },
+
+  /**
+   * Listen for updater events
+   */
+  onUpdaterEvent: (event: string, callback: UpdaterEventCallback): void => {
+    ipcRenderer.on(event, (_event, data) => callback(data));
+  },
+
+  /**
+   * Remove updater event listener
+   */
+  removeUpdaterListener: (event: string, callback: UpdaterEventCallback): void => {
+    ipcRenderer.removeListener(event, callback);
+  },
 });
 
 // Log that preload script loaded successfully

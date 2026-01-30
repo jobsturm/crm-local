@@ -30,6 +30,7 @@ npm-debug.log*
 # Electron
 out/
 release/
+dist-electron/
 
 # Coverage
 coverage/

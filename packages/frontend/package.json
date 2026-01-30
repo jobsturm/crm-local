@@ -1,7 +1,16 @@
 {
-  "name": "@crm-local/frontend",
+  "name": "simpel-crm",
+  "productName": "Simpel CRM",
   "version": "1.0.0",
-  "description": "CRM Local Frontend - Vue 3 + Naive UI + Electron",
+  "description": "Simple, local CRM for freelancers and small businesses",
+  "author": {
+    "name": "Job Sturm",
+    "email": "job@example.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jobsturm/crm-local"
+  },
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -9,7 +18,12 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "electron:dev": "vite --mode electron",
-    "electron:build": "vue-tsc --noEmit && vite build && electron-builder",
+    "electron:build": "npm run build && electron-builder --publish never",
+    "electron:build:mac": "npm run build && electron-builder --mac --publish never",
+    "electron:build:win": "npm run build && electron-builder --win --publish never",
+    "electron:build:linux": "npm run build && electron-builder --linux --publish never",
+    "electron:publish": "npm run build && electron-builder --publish always",
+    "postinstall": "electron-builder install-app-deps",
     "test": "vitest",
     "test:run": "vitest run"
   },
@@ -17,6 +31,7 @@
     "@crm-local/shared": "*",
     "@vicons/ionicons5": "^0.12.0",
     "echarts": "^6.0.0",
+    "electron-updater": "^6.7.3",
     "handlebars": "^4.7.8",
     "lodash-es": "^4.17.23",
     "naive-ui": "^2.40.0",
@@ -29,7 +44,7 @@
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
     "@vitejs/plugin-vue": "^5.1.0",
-    "electron": "^32.0.0",
+    "electron": "32.2.6",
     "electron-builder": "^25.0.0",
     "typescript": "^5.3.0",
     "vite": "^5.4.0",
@@ -37,5 +52,69 @@
     "vite-plugin-electron-renderer": "^0.14.0",
     "vitest": "^2.0.0",
     "vue-tsc": "^2.1.0"
+  },
+  "build": {
+    "appId": "com.simpelcrm.app",
+    "productName": "Simpel CRM",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        {
+          "target": "zip",
+          "arch": ["universal"]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "jobsturm",
+      "repo": "crm-local",
+      "releaseType": "release"
+    }
   }
 }

@@ -16,39 +16,6 @@ export interface PDFGenerationResult {
   error?: string;
 }
 
-interface SelectDirectoryOptions {
-  title?: string;
-  defaultPath?: string;
-}
-
-interface SelectDirectoryResult {
-  canceled: boolean;
-  filePath?: string;
-}
-
-interface ElectronAPI {
-  saveFileDialog: (options: SaveDialogOptions) => Promise<SaveDialogResult>;
-  generatePDF: (html: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
-  selectDirectory: (options?: SelectDirectoryOptions) => Promise<SelectDirectoryResult>;
-}
-
-interface SaveDialogOptions {
-  title: string;
-  defaultPath: string;
-  filters: Array<{ name: string; extensions: string[] }>;
-}
-
-interface SaveDialogResult {
-  canceled: boolean;
-  filePath?: string;
-}
-
-declare global {
-  interface Window {
-    electronAPI?: ElectronAPI;
-  }
-}
-
 /**
  * Sanitizes a string for use in a filename
  */

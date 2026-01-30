@@ -20,14 +20,47 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     return electron.ipcRenderer.invoke("pdf:generate", html, filePath);
   },
   /**
-   * Get app version
+   * Get app version from main process
    */
   getVersion: () => {
-    return process.env.npm_package_version ?? "1.0.0";
+    return electron.ipcRenderer.invoke("app:version");
   },
   /**
    * Platform info
    */
-  platform: process.platform
+  platform: process.platform,
+  // ============================================================
+  // Auto-Updater API
+  // ============================================================
+  /**
+   * Check for updates
+   */
+  checkForUpdates: () => {
+    return electron.ipcRenderer.invoke("updater:check");
+  },
+  /**
+   * Download the available update
+   */
+  downloadUpdate: () => {
+    return electron.ipcRenderer.invoke("updater:download");
+  },
+  /**
+   * Install the downloaded update and restart
+   */
+  installUpdate: () => {
+    electron.ipcRenderer.invoke("updater:install");
+  },
+  /**
+   * Listen for updater events
+   */
+  onUpdaterEvent: (event, callback) => {
+    electron.ipcRenderer.on(event, (_event, data) => callback(data));
+  },
+  /**
+   * Remove updater event listener
+   */
+  removeUpdaterListener: (event, callback) => {
+    electron.ipcRenderer.removeListener(event, callback);
+  }
 });
 console.log("Electron preload script loaded");

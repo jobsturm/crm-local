@@ -15,14 +15,17 @@ import {
   NRadioButton,
   NIcon,
   NDivider,
+  NTag,
+  NProgress,
   useMessage,
   useDialog,
 } from 'naive-ui';
-import { SunnyOutline, MoonOutline, DesktopOutline } from '@vicons/ionicons5';
+import { SunnyOutline, MoonOutline, DesktopOutline, RefreshOutline, DownloadOutline } from '@vicons/ionicons5';
 import FlagIcon from '@/components/icons/FlagIcon.vue';
 import type { ThemePreference, LanguagePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
 import { useTheme } from '@/composables/useTheme';
+import { useAutoUpdate } from '@/composables/useAutoUpdate';
 import * as api from '@/api/client';
 
 const { t, locale } = useI18n();
@@ -30,6 +33,19 @@ const message = useMessage();
 const dialog = useDialog();
 const store = useSettingsStore();
 const { themePreference, setThemePreference, resolvedTheme } = useTheme();
+const {
+  status: updateStatus,
+  updateInfo,
+  progress: updateProgress,
+  error: updateError,
+  currentVersion,
+  isElectron: canAutoUpdate,
+  isDownloading,
+  isReadyToInstall,
+  checkForUpdates,
+  downloadUpdate,
+  installUpdate,
+} = useAutoUpdate();
 
 const loading = ref(false);
 const currentStoragePath = ref('');
@@ -51,8 +67,8 @@ function handleThemeChange(value: ThemePreference) {
 
 // Language options with flag codes
 const languageOptions: Array<{ value: LanguagePreference; nativeLabel: string; flagCode: 'gb' | 'nl' }> = [
-  { value: 'en-US', nativeLabel: 'English', flagCode: 'gb' },
-  { value: 'nl-NL', nativeLabel: 'Nederlands', flagCode: 'nl' },
+  { value: 'en-US', nativeLabel: 'English', flagCode: 'gb' as const },
+  { value: 'nl-NL', nativeLabel: 'Nederlands', flagCode: 'nl' as const },
 ];
 
 const currentLanguage = computed(() => (locale.value as LanguagePreference) || 'en-US');
@@ -247,6 +263,86 @@ onMounted(() => {
               {{ t('settings.storage.changeButton') }}
             </NButton>
           </NSpace>
+        </NSpace>
+      </NCard>
+
+      <NDivider />
+
+      <!-- About Card -->
+      <NCard :title="t('generalSettings.about.title')">
+        <NSpace vertical :size="16">
+          <NSpace justify="space-between" align="center">
+            <NSpace align="center" :size="12">
+              <NText strong>Simpel CRM</NText>
+              <NTag size="small" type="info">v{{ currentVersion }}</NTag>
+            </NSpace>
+            
+            <NSpace :size="8">
+              <!-- Check for updates button -->
+              <NButton
+                v-if="canAutoUpdate && updateStatus !== 'downloading'"
+                :loading="updateStatus === 'checking'"
+                :disabled="updateStatus === 'checking'"
+                @click="checkForUpdates"
+              >
+                <template #icon>
+                  <NIcon :component="RefreshOutline" />
+                </template>
+                {{ t('generalSettings.about.checkUpdates') }}
+              </NButton>
+              
+              <!-- Download update button -->
+              <NButton
+                v-if="updateStatus === 'available'"
+                type="primary"
+                @click="downloadUpdate"
+              >
+                <template #icon>
+                  <NIcon :component="DownloadOutline" />
+                </template>
+                {{ t('generalSettings.about.download', { version: updateInfo?.version }) }}
+              </NButton>
+              
+              <!-- Install update button -->
+              <NButton
+                v-if="isReadyToInstall"
+                type="success"
+                @click="installUpdate"
+              >
+                {{ t('generalSettings.about.installRestart') }}
+              </NButton>
+            </NSpace>
+          </NSpace>
+
+          <!-- Download progress -->
+          <div v-if="isDownloading && updateProgress">
+            <NText depth="3">{{ t('generalSettings.about.downloading') }}</NText>
+            <NProgress
+              type="line"
+              :percentage="Math.round(updateProgress.percent)"
+              :indicator-placement="'inside'"
+              processing
+            />
+          </div>
+
+          <!-- Status messages -->
+          <NAlert v-if="updateStatus === 'not-available'" type="success" :bordered="false">
+            {{ t('generalSettings.about.upToDate') }}
+          </NAlert>
+          
+          <NAlert v-if="updateError" type="error" :bordered="false">
+            {{ updateError }}
+          </NAlert>
+
+          <NAlert v-if="!canAutoUpdate" type="info" :bordered="false">
+            {{ t('generalSettings.about.browserMode') }}
+          </NAlert>
+
+          <NDivider style="margin: 8px 0;" />
+
+          <NText depth="3" style="font-size: 13px;">
+            {{ t('generalSettings.about.description') }}
+          </NText>
         </NSpace>
       </NCard>
     </NSpin>

@@ -10,11 +10,13 @@ import { DocumentListViewTranslations } from '../views/DocumentListView/Document
 import { DocumentDetailViewTranslations } from '../views/DocumentDetailView/DocumentDetailView.translations';
 import { DocumentFormViewTranslations } from '../views/DocumentFormView/DocumentFormView.translations';
 import { SettingsViewTranslations } from '../views/SettingsView/SettingsView.translations';
+import { DocumentSettingsViewTranslations } from '../views/DocumentSettingsView/DocumentSettingsView.translations';
 import { GeneralSettingsViewTranslations } from '../views/GeneralSettingsView/GeneralSettingsView.translations';
 import { FinancialOverviewViewTranslations } from '../views/FinancialOverviewView/FinancialOverviewView.translations';
 import { DashboardViewTranslations } from '../views/DashboardView/DashboardView.translations';
 import { AppSidebarTranslations } from '../components/AppSidebar/AppSidebar.translations';
 import { CustomerFormModalTranslations } from '../components/CustomerFormModal/CustomerFormModal.translations';
+import { updateTranslations } from '../components/UpdateNotification/UpdateNotification.translations';
 
 // Combine all labels with flat structure
 function combineLabels(...labelObjects: Array<Record<string, Record<string, string>>>): Record<string, Record<string, string>> {
@@ -44,11 +46,13 @@ export const labels = combineLabels(
   DocumentDetailViewTranslations,
   DocumentFormViewTranslations,
   SettingsViewTranslations,
+  DocumentSettingsViewTranslations,
   GeneralSettingsViewTranslations,
   FinancialOverviewViewTranslations,
   DashboardViewTranslations,
   AppSidebarTranslations,
-  CustomerFormModalTranslations
+  CustomerFormModalTranslations,
+  updateTranslations
 );
 
 export type Locale = 'en-US' | 'nl-NL';

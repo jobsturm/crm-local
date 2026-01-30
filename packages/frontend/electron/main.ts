@@ -1,10 +1,11 @@
 /**
  * Electron Main Process
  *
- * Creates the main application window and handles IPC communication.
+ * Creates the main application window, handles IPC communication, and auto-updates.
  */
 
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +17,73 @@ const __dirname = dirname(__filename);
 app.disableHardwareAcceleration();
 
 let mainWindow: BrowserWindow | null = null;
+
+// ============================================================
+// Auto-Updater Configuration
+// ============================================================
+
+// Configure auto-updater logging
+autoUpdater.logger = console;
+
+// Don't auto-download, let user decide
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+function setupAutoUpdater() {
+  // Check for updates (only in production)
+  if (!process.env.VITE_DEV_SERVER_URL) {
+    // Check for updates after a short delay
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.error('Error checking for updates:', err);
+      });
+    }, 3000);
+  }
+
+  // Auto-updater events
+  autoUpdater.on('checking-for-update', () => {
+    sendToRenderer('updater:checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    sendToRenderer('updater:available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes,
+      releaseDate: info.releaseDate,
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    sendToRenderer('updater:not-available');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendToRenderer('updater:progress', {
+      percent: progress.percent,
+      bytesPerSecond: progress.bytesPerSecond,
+      transferred: progress.transferred,
+      total: progress.total,
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    sendToRenderer('updater:downloaded', {
+      version: info.version,
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    sendToRenderer('updater:error', {
+      message: err.message,
+    });
+  });
+}
+
+function sendToRenderer(channel: string, data?: unknown) {
+  if (mainWindow?.webContents) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -54,6 +122,7 @@ function createWindow() {
 // App lifecycle
 app.whenReady().then(() => {
   createWindow();
+  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -165,3 +234,43 @@ ipcMain.handle(
     }
   }
 );
+
+// ============================================================
+// Auto-Updater IPC Handlers
+// ============================================================
+
+// Check for updates manually
+ipcMain.handle('updater:check', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { success: true, updateInfo: result?.updateInfo };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to check for updates',
+    };
+  }
+});
+
+// Download the update
+ipcMain.handle('updater:download', async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to download update',
+    };
+  }
+});
+
+// Install the update and restart
+ipcMain.handle('updater:install', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+// Get current app version
+ipcMain.handle('app:version', () => {
+  return app.getVersion();
+});

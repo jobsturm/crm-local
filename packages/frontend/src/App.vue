@@ -5,8 +5,10 @@ import {
   NDialogProvider,
   NLayout,
   NLayoutContent,
+  NSpace,
 } from 'naive-ui';
 import AppSidebar from '@/components/AppSidebar/AppSidebar.vue';
+import UpdateNotification from '@/components/UpdateNotification/UpdateNotification.vue';
 import { useTheme } from '@/composables/useTheme';
 
 const { naiveTheme } = useTheme();
@@ -19,7 +21,10 @@ const { naiveTheme } = useTheme();
         <NLayout has-sider position="absolute">
           <AppSidebar />
           <NLayoutContent content-style="padding: 24px;">
-            <RouterView />
+            <NSpace vertical :size="16">
+              <UpdateNotification />
+              <RouterView />
+            </NSpace>
           </NLayoutContent>
         </NLayout>
       </NDialogProvider>
