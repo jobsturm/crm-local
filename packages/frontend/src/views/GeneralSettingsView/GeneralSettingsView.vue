@@ -366,7 +366,23 @@ onMounted(() => {
             {{ t('generalSettings.about.upToDate') }}
           </NAlert>
           
-          <NAlert v-if="updateError" type="error" :bordered="false">
+          <!-- Code signing error - show manual download link -->
+          <NAlert v-if="updateError === 'CODE_SIGNING_ERROR'" type="warning" :bordered="false">
+            <NSpace vertical :size="8">
+              <NText>{{ t('generalSettings.about.codeSigningError') }}</NText>
+              <NButton
+                text
+                type="primary"
+                tag="a"
+                href="https://github.com/jobsturm/crm-local/releases/latest"
+                target="_blank"
+              >
+                {{ t('generalSettings.about.downloadManually') }}
+              </NButton>
+            </NSpace>
+          </NAlert>
+          
+          <NAlert v-else-if="updateError" type="error" :bordered="false">
             {{ updateError }}
           </NAlert>
 

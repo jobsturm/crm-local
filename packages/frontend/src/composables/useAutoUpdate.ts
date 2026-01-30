@@ -77,7 +77,14 @@ export function useAutoUpdate() {
   const handleError = (data: unknown) => {
     status.value = 'error';
     const err = data as { message: string };
-    error.value = err.message;
+    // Detect code signing error and provide helpful message
+    if (err.message?.includes('code object is not signed') || 
+        err.message?.includes('signature') ||
+        err.message?.includes('Code signature')) {
+      error.value = 'CODE_SIGNING_ERROR';
+    } else {
+      error.value = err.message;
+    }
   };
 
   // Setup event listeners
