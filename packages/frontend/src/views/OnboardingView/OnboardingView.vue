@@ -80,16 +80,25 @@ const businessForm = ref<UpdateBusinessDto>({
 
 // Step validation
 const isStep1Valid = computed(() => {
-  return businessForm.value.name && businessForm.value.name.length > 0;
+  const name = businessForm.value.name ?? '';
+  return name.trim().length > 0;
 });
 
 const isStep2Valid = computed(() => {
   const addr = businessForm.value.address;
-  return addr && addr.street && addr.city && addr.postalCode && addr.country;
+  if (!addr) return false;
+  const street = addr.street ?? '';
+  const city = addr.city ?? '';
+  const postalCode = addr.postalCode ?? '';
+  const country = addr.country ?? '';
+  return street.trim().length > 0 && city.trim().length > 0 && 
+         postalCode.trim().length > 0 && country.trim().length > 0;
 });
 
 const isStep3Valid = computed(() => {
-  return businessForm.value.email && businessForm.value.phone;
+  const email = businessForm.value.email ?? '';
+  const phone = businessForm.value.phone ?? '';
+  return email.trim().length > 0 && phone.trim().length > 0;
 });
 
 const canProceed = computed(() => {
