@@ -1,7 +1,7 @@
 {
   "name": "simpel-crm",
   "productName": "Simpel CRM",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Simple, local CRM for freelancers and small businesses",
   "author": {
     "name": "Job Sturm",
@@ -15,7 +15,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build --mode electron",
     "build:all": "npm run build && npm run build:backend",
     "build:backend": "cd ../backend && npm run build:bundle",
     "preview": "vite preview",

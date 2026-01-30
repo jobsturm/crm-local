@@ -58,30 +58,28 @@ export async function startServer(options: StartServerOptions): Promise<ServerIn
   // Initialize storage
   await storageService.initialize();
 
-  // Start server
-  return new Promise((resolve, reject) => {
-    try {
-      server = app.listen(port, () => {
-        console.log(`🚀 CRM Backend running on http://localhost:${port}`);
+  // Start server with port retry logic
+  const tryListen = (tryPort: number, maxRetries: number): Promise<ServerInfo> => {
+    return new Promise((resolve, reject) => {
+      server = app.listen(tryPort, () => {
+        console.log(`🚀 CRM Backend running on http://localhost:${tryPort}`);
         console.log(`📁 Storage path: ${storagePath}`);
-        resolve({ port, storagePath });
+        resolve({ port: tryPort, storagePath });
       });
 
       server.on('error', (err: NodeJS.ErrnoException) => {
-        if (err.code === 'EADDRINUSE') {
-          console.log(`Port ${port} is in use, trying ${port + 1}...`);
-          server = app.listen(port + 1, () => {
-            console.log(`🚀 CRM Backend running on http://localhost:${port + 1}`);
-            resolve({ port: port + 1, storagePath });
-          });
+        if (err.code === 'EADDRINUSE' && maxRetries > 0) {
+          console.log(`Port ${tryPort} is in use, trying ${tryPort + 1}...`);
+          server = null;
+          tryListen(tryPort + 1, maxRetries - 1).then(resolve).catch(reject);
         } else {
           reject(err);
         }
       });
-    } catch (err) {
-      reject(err);
-    }
-  });
+    });
+  };
+
+  return tryListen(port, 10);
 }
 
 /**
@@ -102,8 +100,14 @@ export async function stopServer(): Promise<void> {
   });
 }
 
-// If running directly (for testing)
-if (require.main === module) {
+// Auto-start when run directly (works with both ESM and CJS bundled formats)
+const isMainModule = require.main === module || process.argv[1]?.endsWith('server.cjs');
+
+if (isMainModule) {
   const storagePath = process.env.CRM_STORAGE_PATH || './data';
-  startServer({ storagePath }).catch(console.error);
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3456;
+  startServer({ storagePath, port }).catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
 }

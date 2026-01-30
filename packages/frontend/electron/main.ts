@@ -121,13 +121,24 @@ autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
 function setupAutoUpdater() {
-  // Check for updates (only in production)
+  // Check for updates (only in production, and only if app-update.yml exists)
   if (!process.env.VITE_DEV_SERVER_URL) {
     // Check for updates after a short delay
-    setTimeout(() => {
-      autoUpdater.checkForUpdates().catch((err) => {
-        console.error('Error checking for updates:', err);
-      });
+    setTimeout(async () => {
+      try {
+        // Check if app-update.yml exists (it won't for dev/dir builds)
+        const fs = await import('fs/promises');
+        const updateConfigPath = join(process.resourcesPath, 'app-update.yml');
+        await fs.access(updateConfigPath);
+        
+        // File exists, safe to check for updates
+        autoUpdater.checkForUpdates().catch((err) => {
+          console.log('Auto-update check failed:', err.message);
+        });
+      } catch {
+        // app-update.yml doesn't exist, skip auto-updates silently
+        console.log('Auto-updates disabled (no app-update.yml)');
+      }
     }, 3000);
   }
 

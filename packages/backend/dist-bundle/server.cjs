@@ -24174,7 +24174,9 @@ var ApiError = class extends Error {
   }
 };
 function errorHandler(err, _req, res, _next) {
-  console.error("Error:", err);
+  if (process.env.NODE_ENV !== "test") {
+    console.error("Error:", err);
+  }
   if (err instanceof ApiError) {
     const response2 = {
       statusCode: err.statusCode,
@@ -26097,28 +26099,25 @@ async function startServer(options) {
   });
   app.use(errorHandler);
   await storageService.initialize();
-  return new Promise((resolve, reject) => {
-    try {
-      server = app.listen(port, () => {
-        console.log(`\u{1F680} CRM Backend running on http://localhost:${port}`);
+  const tryListen = (tryPort, maxRetries) => {
+    return new Promise((resolve, reject) => {
+      server = app.listen(tryPort, () => {
+        console.log(`\u{1F680} CRM Backend running on http://localhost:${tryPort}`);
         console.log(`\u{1F4C1} Storage path: ${storagePath}`);
-        resolve({ port, storagePath });
+        resolve({ port: tryPort, storagePath });
       });
       server.on("error", (err) => {
-        if (err.code === "EADDRINUSE") {
-          console.log(`Port ${port} is in use, trying ${port + 1}...`);
-          server = app.listen(port + 1, () => {
-            console.log(`\u{1F680} CRM Backend running on http://localhost:${port + 1}`);
-            resolve({ port: port + 1, storagePath });
-          });
+        if (err.code === "EADDRINUSE" && maxRetries > 0) {
+          console.log(`Port ${tryPort} is in use, trying ${tryPort + 1}...`);
+          server = null;
+          tryListen(tryPort + 1, maxRetries - 1).then(resolve).catch(reject);
         } else {
           reject(err);
         }
       });
-    } catch (err) {
-      reject(err);
-    }
-  });
+    });
+  };
+  return tryListen(port, 10);
 }
 async function stopServer() {
   return new Promise((resolve) => {
@@ -26134,9 +26133,14 @@ async function stopServer() {
     }
   });
 }
-if (require.main === module) {
+var isMainModule = require.main === module || process.argv[1]?.endsWith("server.cjs");
+if (isMainModule) {
   const storagePath = process.env.CRM_STORAGE_PATH || "./data";
-  startServer({ storagePath }).catch(console.error);
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3456;
+  startServer({ storagePath, port }).catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  });
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

@@ -31,36 +31,55 @@ import type {
 } from '@crm-local/shared';
 
 // API base URL management
-// In Electron, we get the port from the main process
+// In Electron (file: protocol), we need absolute URLs to the backend
 // In browser (with Vite proxy), we use relative URL
 let API_BASE = '/api';
-let apiBaseInitialized = false;
+let apiBasePromise: Promise<void> | null = null;
+
+// Detect if we're running in Electron (file: protocol)
+const isElectron = typeof window !== 'undefined' && window.location.protocol === 'file:';
 
 async function initializeApiBase(): Promise<void> {
-  if (apiBaseInitialized) return;
+  // Return existing promise if initialization is already in progress
+  if (apiBasePromise) return apiBasePromise;
 
-  const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+  apiBasePromise = (async () => {
+    if (!isElectron) {
+      console.log('Browser mode: using relative API path');
+      return;
+    }
 
-  if (isFileProtocol && window.electronAPI?.getBackendPort) {
-    try {
-      const port = await window.electronAPI.getBackendPort();
-      API_BASE = `http://localhost:${port}/api`;
-      console.log(`API initialized: ${API_BASE}`);
-    } catch (err) {
-      console.error('Failed to get backend port, using default:', err);
+    console.log('Electron mode: waiting for backend port...');
+    
+    // Wait for electronAPI to be available (preload script may not have run yet)
+    let attempts = 0;
+    while (!window.electronAPI?.getBackendPort && attempts < 100) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      attempts++;
+    }
+
+    if (window.electronAPI?.getBackendPort) {
+      try {
+        const port = await window.electronAPI.getBackendPort();
+        API_BASE = `http://localhost:${port}/api`;
+        console.log(`API initialized with port from Electron: ${API_BASE}`);
+      } catch (err) {
+        console.error('Failed to get backend port:', err);
+        API_BASE = 'http://localhost:3456/api';
+        console.log(`API fallback: ${API_BASE}`);
+      }
+    } else {
+      console.warn(`electronAPI not available after ${attempts} attempts, using default`);
       API_BASE = 'http://localhost:3456/api';
     }
-  }
+  })();
 
-  apiBaseInitialized = true;
+  return apiBasePromise;
 }
 
-// Initialize on module load for Electron
-if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
-  // Use setTimeout to ensure electronAPI is available
-  setTimeout(() => {
-    void initializeApiBase();
-  }, 0);
+// Start initialization immediately in Electron mode
+if (isElectron) {
+  void initializeApiBase();
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
