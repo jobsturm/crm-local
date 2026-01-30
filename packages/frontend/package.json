@@ -17,6 +17,8 @@
     "@crm-local/shared": "*",
     "@vicons/ionicons5": "^0.12.0",
     "echarts": "^6.0.0",
+    "handlebars": "^4.7.8",
+    "lodash-es": "^4.17.23",
     "naive-ui": "^2.40.0",
     "pinia": "^2.2.0",
     "vue": "^3.5.0",
@@ -25,6 +27,7 @@
     "vue-router": "^4.4.0"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
     "@vitejs/plugin-vue": "^5.1.0",
     "electron": "^32.0.0",
     "electron-builder": "^25.0.0",

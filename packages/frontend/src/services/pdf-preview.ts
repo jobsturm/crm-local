@@ -117,6 +117,8 @@ export interface PreviewOptions {
   defaultIntroText?: string;
   defaultNotesText?: string;
   defaultFooterText?: string;
+  /** Enable interactive mode - makes labels clickable for editing */
+  interactive?: boolean;
 }
 
 /**
@@ -134,6 +136,7 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     defaultIntroText,
     defaultNotesText,
     defaultFooterText,
+    interactive = false,
   } = options;
 
   const baseDocument = documentType === 'offer' ? SAMPLE_OFFER : SAMPLE_INVOICE;
@@ -176,5 +179,5 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     updatedAt: new Date().toISOString(),
   };
 
-  return generatePDFHTML(updatedDocument, business ?? SAMPLE_BUSINESS, settings);
+  return generatePDFHTML(updatedDocument, business ?? SAMPLE_BUSINESS, settings, interactive);
 }

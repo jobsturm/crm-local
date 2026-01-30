@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NCard,
@@ -20,6 +20,7 @@ import {
   NSwitch,
   NSplit,
   NSelect,
+  NModal,
   useMessage,
   useDialog,
   type SelectOption,
@@ -28,6 +29,7 @@ import type { UpdateBusinessDto, UpdateSettingsDto, DocumentLabelsDto } from '@c
 import { useSettingsStore } from '@/stores/settings';
 import * as api from '@/api/client';
 import { generatePreviewHTML, SAMPLE_BUSINESS } from '@/services/pdf-preview';
+import { debounce } from 'lodash-es';
 
 const { t } = useI18n();
 const message = useMessage();
@@ -36,15 +38,6 @@ const store = useSettingsStore();
 
 const loading = ref(false);
 const saving = ref(false);
-
-// Debounce utility
-function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
-  let timeoutId: ReturnType<typeof setTimeout>;
-  return ((...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), delay);
-  }) as T;
-}
 
 // Storage path
 const currentStoragePath = ref('');
@@ -136,12 +129,276 @@ const previewHTML = computed(() => {
     defaultIntroText: settingsForm.value.defaultIntroText,
     defaultNotesText: settingsForm.value.defaultNotesText,
     defaultFooterText: settingsForm.value.defaultFooterText,
+    // Enable interactive mode for clickable labels
+    interactive: true,
   });
 });
 
 // Create a data URL for the iframe
 const previewDataUrl = computed(() => {
   return `data:text/html;charset=utf-8,${encodeURIComponent(previewHTML.value)}`;
+});
+
+// Edit modal state for clickable PDF labels
+const showEditModal = ref(false);
+const editingField = ref('');
+const editingValue = ref('');
+
+// Active tab for switching when clicking fields
+const activeTab = ref('business');
+
+// Map of field keys to their form paths, friendly names, and which tab they belong to
+interface FieldConfig {
+  getValue: () => string;
+  setValue: (v: string) => void;
+  label: string;
+  tab: string;
+  isNumber?: boolean;
+}
+
+const fieldInfo: Record<string, FieldConfig> = {
+  // Business Info fields (tab: business)
+  'business.name': {
+    getValue: () => businessForm.value.name ?? '',
+    setValue: (v) => (businessForm.value.name = v),
+    label: 'Company Name',
+    tab: 'business',
+  },
+  'business.email': {
+    getValue: () => businessForm.value.email ?? '',
+    setValue: (v) => (businessForm.value.email = v),
+    label: 'Email',
+    tab: 'business',
+  },
+  'business.phone': {
+    getValue: () => businessForm.value.phone ?? '',
+    setValue: (v) => (businessForm.value.phone = v),
+    label: 'Phone',
+    tab: 'business',
+  },
+  'business.address.street': {
+    getValue: () => businessForm.value.address?.street ?? '',
+    setValue: (v) => {
+      if (businessForm.value.address) businessForm.value.address.street = v;
+    },
+    label: 'Street',
+    tab: 'business',
+  },
+  'business.address.postalCode': {
+    getValue: () => businessForm.value.address?.postalCode ?? '',
+    setValue: (v) => {
+      if (businessForm.value.address) businessForm.value.address.postalCode = v;
+    },
+    label: 'Postal Code',
+    tab: 'business',
+  },
+  'business.address.city': {
+    getValue: () => businessForm.value.address?.city ?? '',
+    setValue: (v) => {
+      if (businessForm.value.address) businessForm.value.address.city = v;
+    },
+    label: 'City',
+    tab: 'business',
+  },
+  'business.taxId': {
+    getValue: () => businessForm.value.taxId ?? '',
+    setValue: (v) => (businessForm.value.taxId = v),
+    label: 'Tax ID / VAT Number',
+    tab: 'business',
+  },
+  'business.chamberOfCommerce': {
+    getValue: () => businessForm.value.chamberOfCommerce ?? '',
+    setValue: (v) => (businessForm.value.chamberOfCommerce = v),
+    label: 'Chamber of Commerce',
+    tab: 'business',
+  },
+  'business.bankDetails.iban': {
+    getValue: () => businessForm.value.bankDetails?.iban ?? '',
+    setValue: (v) => {
+      if (businessForm.value.bankDetails) businessForm.value.bankDetails.iban = v;
+    },
+    label: 'IBAN',
+    tab: 'business',
+  },
+
+  // Document Settings fields (tab: documents)
+  'settings.currencySymbol': {
+    getValue: () => settingsForm.value.currencySymbol ?? '',
+    setValue: (v) => (settingsForm.value.currencySymbol = v),
+    label: 'Currency Symbol',
+    tab: 'documents',
+  },
+  'settings.defaultTaxRate': {
+    getValue: () => String(settingsForm.value.defaultTaxRate ?? 21),
+    setValue: (v) => (settingsForm.value.defaultTaxRate = parseFloat(v) || 21),
+    label: 'Default Tax Rate (%)',
+    tab: 'documents',
+    isNumber: true,
+  },
+
+  // PDF Labels (tab: labels)
+  offerTitle: {
+    getValue: () => labelsForm.value.offerTitle ?? '',
+    setValue: (v) => (labelsForm.value.offerTitle = v),
+    label: 'Offer Title',
+    tab: 'labels',
+  },
+  invoiceTitle: {
+    getValue: () => labelsForm.value.invoiceTitle ?? '',
+    setValue: (v) => (labelsForm.value.invoiceTitle = v),
+    label: 'Invoice Title',
+    tab: 'labels',
+  },
+  offerNumberLabel: {
+    getValue: () => labelsForm.value.offerNumberLabel ?? '',
+    setValue: (v) => (labelsForm.value.offerNumberLabel = v),
+    label: 'Offer Number Label',
+    tab: 'labels',
+  },
+  invoiceNumberLabel: {
+    getValue: () => labelsForm.value.invoiceNumberLabel ?? '',
+    setValue: (v) => (labelsForm.value.invoiceNumberLabel = v),
+    label: 'Invoice Number Label',
+    tab: 'labels',
+  },
+  documentDateLabel: {
+    getValue: () => labelsForm.value.documentDateLabel ?? '',
+    setValue: (v) => (labelsForm.value.documentDateLabel = v),
+    label: 'Document Date Label',
+    tab: 'labels',
+  },
+  dueDateLabel: {
+    getValue: () => labelsForm.value.dueDateLabel ?? '',
+    setValue: (v) => (labelsForm.value.dueDateLabel = v),
+    label: 'Due Date Label',
+    tab: 'labels',
+  },
+  customerSectionTitleOffer: {
+    getValue: () => labelsForm.value.customerSectionTitleOffer ?? '',
+    setValue: (v) => (labelsForm.value.customerSectionTitleOffer = v),
+    label: 'Customer Section (Offer)',
+    tab: 'labels',
+  },
+  customerSectionTitleInvoice: {
+    getValue: () => labelsForm.value.customerSectionTitleInvoice ?? '',
+    setValue: (v) => (labelsForm.value.customerSectionTitleInvoice = v),
+    label: 'Customer Section (Invoice)',
+    tab: 'labels',
+  },
+  introSectionLabel: {
+    getValue: () => labelsForm.value.introSectionLabel ?? '',
+    setValue: (v) => (labelsForm.value.introSectionLabel = v),
+    label: 'Introduction Section Label',
+    tab: 'labels',
+  },
+  descriptionLabel: {
+    getValue: () => labelsForm.value.descriptionLabel ?? '',
+    setValue: (v) => (labelsForm.value.descriptionLabel = v),
+    label: 'Description',
+    tab: 'labels',
+  },
+  quantityLabel: {
+    getValue: () => labelsForm.value.quantityLabel ?? '',
+    setValue: (v) => (labelsForm.value.quantityLabel = v),
+    label: 'Quantity',
+    tab: 'labels',
+  },
+  unitPriceLabel: {
+    getValue: () => labelsForm.value.unitPriceLabel ?? '',
+    setValue: (v) => (labelsForm.value.unitPriceLabel = v),
+    label: 'Unit Price',
+    tab: 'labels',
+  },
+  amountLabel: {
+    getValue: () => labelsForm.value.amountLabel ?? '',
+    setValue: (v) => (labelsForm.value.amountLabel = v),
+    label: 'Amount',
+    tab: 'labels',
+  },
+  subtotalLabel: {
+    getValue: () => labelsForm.value.subtotalLabel ?? '',
+    setValue: (v) => (labelsForm.value.subtotalLabel = v),
+    label: 'Subtotal',
+    tab: 'labels',
+  },
+  taxLabel: {
+    getValue: () => labelsForm.value.taxLabel ?? '',
+    setValue: (v) => (labelsForm.value.taxLabel = v),
+    label: 'Tax Label',
+    tab: 'labels',
+  },
+  totalLabel: {
+    getValue: () => labelsForm.value.totalLabel ?? '',
+    setValue: (v) => (labelsForm.value.totalLabel = v),
+    label: 'Total',
+    tab: 'labels',
+  },
+  notesSectionLabel: {
+    getValue: () => labelsForm.value.notesSectionLabel ?? '',
+    setValue: (v) => (labelsForm.value.notesSectionLabel = v),
+    label: 'Notes Section Label',
+    tab: 'labels',
+  },
+  paymentTermsTitleOffer: {
+    getValue: () => labelsForm.value.paymentTermsTitleOffer ?? '',
+    setValue: (v) => (labelsForm.value.paymentTermsTitleOffer = v),
+    label: 'Payment Terms (Offer)',
+    tab: 'labels',
+  },
+  paymentTermsTitleInvoice: {
+    getValue: () => labelsForm.value.paymentTermsTitleInvoice ?? '',
+    setValue: (v) => (labelsForm.value.paymentTermsTitleInvoice = v),
+    label: 'Payment Terms (Invoice)',
+    tab: 'labels',
+  },
+  thankYouText: {
+    getValue: () => labelsForm.value.thankYouText ?? '',
+    setValue: (v) => (labelsForm.value.thankYouText = v),
+    label: 'Thank You Text',
+    tab: 'labels',
+  },
+  questionsTextOffer: {
+    getValue: () => labelsForm.value.questionsTextOffer ?? '',
+    setValue: (v) => (labelsForm.value.questionsTextOffer = v),
+    label: 'Questions Text (Offer)',
+    tab: 'labels',
+  },
+  questionsTextInvoice: {
+    getValue: () => labelsForm.value.questionsTextInvoice ?? '',
+    setValue: (v) => (labelsForm.value.questionsTextInvoice = v),
+    label: 'Questions Text (Invoice)',
+    tab: 'labels',
+  },
+};
+
+// Handle postMessage from iframe
+function handleIframeMessage(event: MessageEvent) {
+  if (event.data?.type === 'editLabel' && event.data.field) {
+    const field = event.data.field as string;
+    const info = fieldInfo[field];
+    if (info) {
+      // Switch to the correct tab first
+      activeTab.value = info.tab;
+      // Open the edit modal
+      editingField.value = field;
+      editingValue.value = info.getValue();
+      showEditModal.value = true;
+    }
+  }
+}
+
+function saveEditedLabel() {
+  const info = fieldInfo[editingField.value];
+  if (info) {
+    info.setValue(editingValue.value);
+    // Auto-save will trigger via watcher
+  }
+  showEditModal.value = false;
+}
+
+const editModalTitle = computed(() => {
+  const info = fieldInfo[editingField.value];
+  return info ? `Edit: ${info.label}` : 'Edit Label';
 });
 
 async function loadData() {
@@ -290,6 +547,12 @@ onMounted(() => {
   void loadData().then(() => {
     initialized.value = true;
   });
+  // Listen for postMessage from PDF preview iframe
+  window.addEventListener('message', handleIframeMessage);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('message', handleIframeMessage);
 });
 </script>
 
@@ -298,7 +561,7 @@ onMounted(() => {
     <NText tag="h1" strong style="font-size: 24px; margin: 0">{{ t('settings.title') }}</NText>
 
     <NSpin :show="loading">
-      <NTabs type="line" animated>
+      <NTabs v-model:value="activeTab" type="line" animated>
         <!-- Business Info Tab with PDF Preview -->
         <NTabPane name="business" :tab="t('settings.tab.business')">
           <NSplit direction="horizontal" :default-size="0.4" :min="0.3" :max="0.6" style="height: calc(100vh - 180px); min-height: 700px;">
@@ -674,5 +937,27 @@ onMounted(() => {
         </NTabPane>
       </NTabs>
     </NSpin>
+
+    <!-- Edit Label Modal (triggered by clicking labels in PDF preview) -->
+    <NModal
+      v-model:show="showEditModal"
+      preset="dialog"
+      :title="editModalTitle"
+      positive-text="Save"
+      negative-text="Cancel"
+      @positive-click="saveEditedLabel"
+    >
+      <NSpace vertical :size="12">
+        <NText depth="3">
+          {{ t('settings.editLabel.hint') }}
+        </NText>
+        <NInput
+          v-model:value="editingValue"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('settings.editLabel.placeholder')"
+        />
+      </NSpace>
+    </NModal>
   </NSpace>
 </template>

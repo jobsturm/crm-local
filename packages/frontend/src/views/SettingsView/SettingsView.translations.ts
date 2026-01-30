@@ -99,6 +99,9 @@ export const SettingsViewTranslations = {
     'settings.storage.confirmCopyContent': 'Your data will be copied to the new location. The original files will be kept.',
     'settings.storage.changed': 'Storage location changed successfully',
     'settings.storage.changeFailed': 'Failed to change storage location',
+    // Edit label modal
+    'settings.editLabel.hint': 'Click any highlighted label in the PDF preview to edit it. Changes are saved automatically.',
+    'settings.editLabel.placeholder': 'Enter new label text...',
   },
   'nl-NL': {
     'settings.title': 'Instellingen',
@@ -200,5 +203,8 @@ export const SettingsViewTranslations = {
     'settings.storage.confirmCopyContent': 'Je gegevens worden gekopieerd naar de nieuwe locatie. De originele bestanden blijven behouden.',
     'settings.storage.changed': 'Opslaglocatie succesvol gewijzigd',
     'settings.storage.changeFailed': 'Opslaglocatie wijzigen mislukt',
+    // Edit label modal
+    'settings.editLabel.hint': 'Klik op een gemarkeerd label in de PDF-preview om het te bewerken. Wijzigingen worden automatisch opgeslagen.',
+    'settings.editLabel.placeholder': 'Voer nieuwe labeltekst in...',
   },
 } as const;
