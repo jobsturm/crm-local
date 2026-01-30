@@ -84,7 +84,8 @@ function handleMenuSelect(key: string) {
 <template>
   <NLayoutSider bordered :width="200" :native-scrollbar="false" content-style="padding: 8px;">
     <NSpace vertical :size="16">
-      <NSpace justify="center" :size="0">
+      <NSpace justify="center" align="center" :size="8">
+        <img src="/logo.svg" alt="Simpel CRM" style="width: 32px; height: 32px;">
         <NGradientText type="info" style="font-size: 18px; font-weight: bold">
           Simpel CRM
         </NGradientText>
