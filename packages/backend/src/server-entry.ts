@@ -4,7 +4,7 @@
  * This file exports a function to start the server, used by Electron's main process.
  */
 
-import express, { type Express } from 'express';
+import express from 'express';
 import cors from 'cors';
 import { createRoutes } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
