@@ -117,6 +117,9 @@ export interface PreviewOptions {
   defaultIntroText?: string;
   defaultNotesText?: string;
   defaultFooterText?: string;
+  /** Document number prefixes */
+  offerPrefix?: string;
+  invoicePrefix?: string;
   /** Enable interactive mode - makes labels clickable for editing */
   interactive?: boolean;
 }
@@ -136,14 +139,22 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     defaultIntroText,
     defaultNotesText,
     defaultFooterText,
+    offerPrefix = 'OFF',
+    invoicePrefix = 'INV',
     interactive = false,
   } = options;
 
   const baseDocument = documentType === 'offer' ? SAMPLE_OFFER : SAMPLE_INVOICE;
   
+  // Update document number with the correct prefix
+  const prefix = documentType === 'offer' ? offerPrefix : invoicePrefix;
+  const baseNumber = baseDocument.documentNumber.split('-').slice(1).join('-'); // Get "2026-0042" part
+  const updatedDocumentNumber = `${prefix}-${baseNumber}`;
+
   // Update document with custom settings
   const updatedDocument: DocumentDto = {
     ...baseDocument,
+    documentNumber: updatedDocumentNumber,
     documentTitle: documentType === 'offer' 
       ? (labels.offerTitle ?? DEFAULT_LABELS.offerTitle)
       : (labels.invoiceTitle ?? DEFAULT_LABELS.invoiceTitle),
@@ -164,9 +175,9 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     currencySymbol,
     defaultTaxRate,
     defaultPaymentTermDays,
-    offerPrefix: 'OFF',
+    offerPrefix,
     nextOfferNumber: 1,
-    invoicePrefix: 'INV',
+    invoicePrefix,
     nextInvoiceNumber: 1,
     labels: {
       ...DEFAULT_LABELS,

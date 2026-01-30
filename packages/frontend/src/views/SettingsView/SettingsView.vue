@@ -128,6 +128,9 @@ const previewHTML = computed(() => {
     defaultIntroText: settingsForm.value.defaultIntroText,
     defaultNotesText: settingsForm.value.defaultNotesText,
     defaultFooterText: settingsForm.value.defaultFooterText,
+    // Pass document number prefixes
+    offerPrefix: settingsForm.value.offerPrefix,
+    invoicePrefix: settingsForm.value.invoicePrefix,
     // Enable interactive mode for clickable labels
     interactive: true,
   });
