@@ -191,12 +191,14 @@ onUnmounted(() => {
 
         <!-- Right side: PDF Preview (single instance!) -->
         <template #2>
-          <div class="preview-container">
-            <div class="preview-header">
+          <NCard style="height: 100%; display: flex; flex-direction: column;" content-style="flex: 1; overflow: auto; padding: 16px;">
+            <template #header>
               <NSpace align="center" :size="8">
                 <NText strong>{{ t('settings.preview.title') }}</NText>
                 <NText v-if="saving" depth="3" style="font-size: 12px;">{{ t('settings.saving') }}</NText>
               </NSpace>
+            </template>
+            <template #header-extra>
               <NSpace :size="8">
                 <NButtonGroup size="small">
                   <NButton :type="previewMode === 'edit' ? 'primary' : 'default'" @click="previewMode = 'edit'">
@@ -213,14 +215,12 @@ onUnmounted(() => {
                   style="width: 120px"
                 />
               </NSpace>
-            </div>
-            <div class="preview-content">
-              <iframe
-                :src="previewDataUrl"
-                style="display: block; width: 100%; min-width: 400px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
-              />
-            </div>
-          </div>
+            </template>
+            <iframe
+              :src="previewDataUrl"
+              style="display: block; width: 100%; min-width: 400px; aspect-ratio: 210 / 297; border: none; border-radius: 4px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15);"
+            />
+          </NCard>
         </template>
       </NSplit>
     </NSpin>
@@ -228,31 +228,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.preview-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--n-color);
-  border-radius: 4px;
-  border: 1px solid var(--n-border-color);
-}
-
-.preview-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--n-border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--n-color);
-}
-
-.preview-content {
-  flex: 1;
-  overflow: auto;
-  padding: 16px;
-  background: var(--n-color-modal);
-}
-
 :deep(.highlight-input) {
   animation: highlight-pulse 2s ease-out;
 }
