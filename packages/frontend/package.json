@@ -64,9 +64,11 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*",
-      "!node_modules/@crm-local/**/*"
+      "dist-electron/**/*"
     ],
+    "asar": {
+      "smartUnpack": false
+    },
     "extraResources": [
       {
         "from": "../backend/dist-bundle/",
@@ -75,9 +77,6 @@
           "**/*"
         ]
       }
-    ],
-    "asarUnpack": [
-      "resources/backend/**/*"
     ],
     "mac": {
       "category": "public.app-category.business",
