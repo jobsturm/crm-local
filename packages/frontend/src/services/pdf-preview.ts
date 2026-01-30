@@ -4,7 +4,7 @@
  * Provides sample data and utilities for live PDF preview in settings.
  */
 
-import type { DocumentDto, BusinessDto, SettingsDto, DocumentLabelsDto } from '@crm-local/shared';
+import type { DocumentDto, BusinessDto, SettingsDto, DocumentLabelsDto, CurrencyCode } from '@crm-local/shared';
 import { DEFAULT_LABELS } from '@crm-local/shared';
 import { generatePDFHTML } from './pdf-generator';
 
@@ -104,29 +104,63 @@ export const SAMPLE_OFFER: DocumentDto = {
 };
 
 /**
- * Generate preview HTML with custom labels
+ * Preview options for customizing the PDF preview
  */
-export function generatePreviewHTML(
-  labels: Partial<DocumentLabelsDto>,
-  documentType: 'offer' | 'invoice' = 'invoice',
-  business?: BusinessDto
-): string {
-  const document = documentType === 'offer' ? SAMPLE_OFFER : SAMPLE_INVOICE;
+export interface PreviewOptions {
+  labels?: Partial<DocumentLabelsDto>;
+  documentType?: 'offer' | 'invoice';
+  business?: BusinessDto;
+  currency?: CurrencyCode;
+  currencySymbol?: string;
+  defaultTaxRate?: number;
+  defaultPaymentTermDays?: number;
+  defaultIntroText?: string;
+  defaultNotesText?: string;
+  defaultFooterText?: string;
+}
+
+/**
+ * Generate preview HTML with custom labels and settings
+ */
+export function generatePreviewHTML(options: PreviewOptions = {}): string {
+  const {
+    labels = {},
+    documentType = 'invoice',
+    business,
+    currency = 'EUR',
+    currencySymbol = '€',
+    defaultTaxRate = 21,
+    defaultPaymentTermDays = 14,
+    defaultIntroText,
+    defaultNotesText,
+    defaultFooterText,
+  } = options;
+
+  const baseDocument = documentType === 'offer' ? SAMPLE_OFFER : SAMPLE_INVOICE;
   
-  // Update document title based on labels
+  // Update document with custom settings
   const updatedDocument: DocumentDto = {
-    ...document,
+    ...baseDocument,
     documentTitle: documentType === 'offer' 
       ? (labels.offerTitle ?? DEFAULT_LABELS.offerTitle)
       : (labels.invoiceTitle ?? DEFAULT_LABELS.invoiceTitle),
+    taxRate: defaultTaxRate,
+    paymentTermDays: defaultPaymentTermDays,
+    // Recalculate tax and total based on new tax rate
+    taxAmount: baseDocument.subtotal * (defaultTaxRate / 100),
+    total: baseDocument.subtotal * (1 + defaultTaxRate / 100),
+    // Use custom texts if provided
+    introText: defaultIntroText ?? baseDocument.introText,
+    notesText: defaultNotesText ?? baseDocument.notesText,
+    footerText: defaultFooterText ?? baseDocument.footerText,
   };
 
   const settings: SettingsDto = {
     storagePath: '',
-    currency: 'EUR',
-    currencySymbol: '€',
-    defaultTaxRate: 21,
-    defaultPaymentTermDays: 14,
+    currency,
+    currencySymbol,
+    defaultTaxRate,
+    defaultPaymentTermDays,
     offerPrefix: 'OFF',
     nextOfferNumber: 1,
     invoicePrefix: 'INV',

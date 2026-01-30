@@ -119,11 +119,24 @@ const previewDocTypeOptions = computed<SelectOption[]>(() => [
   { label: t('settings.preview.offer'), value: 'offer' },
 ]);
 
-// Generate preview HTML - updates whenever labels or doc type changes
+// Generate preview HTML - updates whenever any form changes
 const previewHTML = computed(() => {
   // Use actual business info if available, otherwise sample
   const business = store.business ?? SAMPLE_BUSINESS;
-  return generatePreviewHTML(labelsForm.value, previewDocType.value, business);
+  
+  return generatePreviewHTML({
+    labels: labelsForm.value,
+    documentType: previewDocType.value,
+    business,
+    // Pass document settings
+    currency: settingsForm.value.currency,
+    currencySymbol: settingsForm.value.currencySymbol,
+    defaultTaxRate: settingsForm.value.defaultTaxRate,
+    defaultPaymentTermDays: settingsForm.value.defaultPaymentTermDays,
+    defaultIntroText: settingsForm.value.defaultIntroText,
+    defaultNotesText: settingsForm.value.defaultNotesText,
+    defaultFooterText: settingsForm.value.defaultFooterText,
+  });
 });
 
 // Create a data URL for the iframe
