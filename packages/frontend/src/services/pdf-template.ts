@@ -74,6 +74,36 @@ Handlebars.registerHelper('currency', function (
   return formatted;
 });
 
+// Editable link - in edit mode: looks like a link but not clickable, in view mode: normal link
+Handlebars.registerHelper('editableLink', function (
+  this: unknown,
+  fieldKey: string,
+  text: string,
+  href: string,
+  options: Handlebars.HelperOptions
+) {
+  const root = getRootContext(options);
+  const interactive = root.interactive;
+  const escaped = Handlebars.escapeExpression(text);
+  const escapedHref = Handlebars.escapeExpression(href);
+
+  if (interactive && text) {
+    // In edit mode: link styling but pointer-events:none, wrapped in editable span
+    return new Handlebars.SafeString(
+      `<span class="editable" data-field="${fieldKey}" ` +
+        `style="cursor:pointer;border-bottom:1px dashed #3b82f6;transition:background 0.2s;" ` +
+        `onmouseover="this.style.background='#dbeafe'" ` +
+        `onmouseout="this.style.background='transparent'" ` +
+        `onclick="window.parent.postMessage({type:'editLabel',field:'${fieldKey}'},'*')"` +
+        `><a href="${escapedHref}" style="color:#2563eb;text-decoration:none;pointer-events:none;">${escaped}</a></span>`
+    );
+  }
+  // In view mode: normal clickable link
+  return new Handlebars.SafeString(
+    `<a href="${escapedHref}" style="color:#2563eb;text-decoration:none;">${escaped}</a>`
+  );
+});
+
 Handlebars.registerHelper('formatNumber', function (amount: number) {
   return amount.toFixed(2);
 });
@@ -355,8 +385,8 @@ const templateSource = `<!DOCTYPE html>
             </div>
             
             <div class="company-contact">
-                {{#if business.phone}}{{editable "telLabel" labels.telLabel}} {{editable "business.phone" business.phone}}<br>{{/if}}
-                {{#if business.email}}{{editable "emailLabel" labels.emailLabel}} {{editable "business.email" business.email}}{{/if}}
+                {{#if business.phone}}{{editable "telLabel" labels.telLabel}} {{editableLink "business.phone" business.phone (concat "tel:" business.phone)}}<br>{{/if}}
+                {{#if business.email}}{{editable "emailLabel" labels.emailLabel}} {{editableLink "business.email" business.email (concat "mailto:" business.email)}}{{/if}}
             </div>
             
             <div class="company-business">
