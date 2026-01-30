@@ -7,10 +7,13 @@ import {
   NLayoutContent,
 } from 'naive-ui';
 import AppSidebar from '@/components/AppSidebar/AppSidebar.vue';
+import { useTheme } from '@/composables/useTheme';
+
+const { naiveTheme } = useTheme();
 </script>
 
 <template>
-  <NConfigProvider>
+  <NConfigProvider :theme="naiveTheme">
     <NMessageProvider>
       <NDialogProvider>
         <NLayout has-sider position="absolute">

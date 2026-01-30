@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NCard,
@@ -11,16 +11,24 @@ import {
   NText,
   NAlert,
   NSwitch,
+  NRadioGroup,
+  NRadioButton,
+  NIcon,
+  NDivider,
   useMessage,
   useDialog,
 } from 'naive-ui';
+import { SunnyOutline, MoonOutline, DesktopOutline } from '@vicons/ionicons5';
+import type { ThemePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
+import { useTheme } from '@/composables/useTheme';
 import * as api from '@/api/client';
 
 const { t } = useI18n();
 const message = useMessage();
 const dialog = useDialog();
 const store = useSettingsStore();
+const { themePreference, setThemePreference, resolvedTheme } = useTheme();
 
 const loading = ref(false);
 const currentStoragePath = ref('');
@@ -28,6 +36,17 @@ const newStoragePath = ref('');
 const deleteOldData = ref(false);
 const changingStoragePath = ref(false);
 const hasElectron = ref(false);
+
+// Theme options with icons
+const themeOptions = computed(() => [
+  { value: 'light' as ThemePreference, label: t('generalSettings.theme.light'), icon: SunnyOutline },
+  { value: 'dark' as ThemePreference, label: t('generalSettings.theme.dark'), icon: MoonOutline },
+  { value: 'system' as ThemePreference, label: t('generalSettings.theme.system'), icon: DesktopOutline },
+]);
+
+function handleThemeChange(value: ThemePreference) {
+  void setThemePreference(value);
+}
 
 async function browseForDirectory() {
   if (!window.electronAPI?.selectDirectory) {
@@ -105,6 +124,36 @@ onMounted(() => {
     <NText tag="h1" style="margin: 0;">{{ t('generalSettings.title') }}</NText>
 
     <NSpin :show="loading">
+      <!-- Theme Card -->
+      <NCard :title="t('generalSettings.theme.title')">
+        <NSpace vertical :size="16">
+          <NText depth="3">{{ t('generalSettings.theme.description') }}</NText>
+          
+          <NRadioGroup :value="themePreference" @update:value="handleThemeChange">
+            <NSpace :size="12">
+              <NRadioButton
+                v-for="option in themeOptions"
+                :key="option.value"
+                :value="option.value"
+                style="padding: 12px 20px;"
+              >
+                <NSpace align="center" :size="8">
+                  <NIcon :component="option.icon" :size="18" />
+                  <span>{{ option.label }}</span>
+                </NSpace>
+              </NRadioButton>
+            </NSpace>
+          </NRadioGroup>
+
+          <NText v-if="themePreference === 'system'" depth="3" style="font-size: 13px;">
+            {{ t('generalSettings.theme.currentlyUsing', { theme: resolvedTheme === 'dark' ? t('generalSettings.theme.dark') : t('generalSettings.theme.light') }) }}
+          </NText>
+        </NSpace>
+      </NCard>
+
+      <NDivider />
+
+      <!-- Storage Card -->
       <NCard :title="t('settings.storage.infoTitle')">
         <NSpace vertical :size="16">
           <NAlert type="info">
