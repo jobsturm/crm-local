@@ -320,7 +320,7 @@ const templateSource = `<!DOCTYPE html>
             <div class="invoice-info">
                 <div class="invoice-title">{{#ifOffer}}{{editable "offerTitle" labels.offerTitle}}{{else}}{{editable "invoiceTitle" labels.invoiceTitle}}{{/ifOffer}}</div>
                 <div class="invoice-details">
-                    <strong>{{#ifOffer}}{{editable "offerNumberLabel" labels.offerNumberLabel}}{{else}}{{editable "invoiceNumberLabel" labels.invoiceNumberLabel}}{{/ifOffer}}:</strong> {{document.documentNumber}}<br>
+                    <strong>{{#ifOffer}}{{editable "offerNumberLabel" labels.offerNumberLabel}}{{else}}{{editable "invoiceNumberLabel" labels.invoiceNumberLabel}}{{/ifOffer}}:</strong> {{#ifOffer}}{{editable "settings.offerPrefix" settings.offerPrefix}}{{else}}{{editable "settings.invoicePrefix" settings.invoicePrefix}}{{/ifOffer}}-{{documentYear}}-{{documentSeq}}<br>
                     <strong>{{editable "documentDateLabel" labels.documentDateLabel}}:</strong> {{formatDate document.createdAt settings.dateFormat}}<br>
                     <strong>{{editable "dueDateLabel" labels.dueDateLabel}}:</strong> {{formatDate document.dueDate settings.dateFormat}}
                 </div>
@@ -334,14 +334,14 @@ const templateSource = `<!DOCTYPE html>
             </div>
             
             <div class="company-contact">
-                {{#if business.phone}}Tel: {{editable "business.phone" business.phone}}<br>{{/if}}
-                {{#if business.email}}E-mail: {{editable "business.email" business.email}}{{/if}}
+                {{#if business.phone}}{{editable "telLabel" labels.telLabel}} {{editable "business.phone" business.phone}}<br>{{/if}}
+                {{#if business.email}}{{editable "emailLabel" labels.emailLabel}} {{editable "business.email" business.email}}{{/if}}
             </div>
             
             <div class="company-business">
-                {{#if business.chamberOfCommerce}}KvK: {{editable "business.chamberOfCommerce" business.chamberOfCommerce}}<br>{{/if}}
-                {{#if business.taxId}}VAT: {{editable "business.taxId" business.taxId}}<br>{{/if}}
-                {{#if business.bankDetails.iban}}IBAN: {{editable "business.bankDetails.iban" business.bankDetails.iban}}{{/if}}
+                {{#if business.chamberOfCommerce}}{{editable "kvkLabel" labels.kvkLabel}} {{editable "business.chamberOfCommerce" business.chamberOfCommerce}}<br>{{/if}}
+                {{#if business.taxId}}{{editable "vatIdLabel" labels.vatIdLabel}} {{editable "business.taxId" business.taxId}}<br>{{/if}}
+                {{#if business.bankDetails.iban}}{{editable "ibanLabel" labels.ibanLabel}} {{editable "business.bankDetails.iban" business.bankDetails.iban}}{{/if}}
             </div>
         </div>
     </div>
@@ -359,7 +359,7 @@ const templateSource = `<!DOCTYPE html>
     {{#if document.introText}}
     <div class="intro-text">
         <div class="section-title">{{editable "introSectionLabel" labels.introSectionLabel}}</div>
-        {{document.introText}}
+        {{editable "settings.defaultIntroText" document.introText}}
     </div>
     {{/if}}
 
@@ -402,14 +402,14 @@ const templateSource = `<!DOCTYPE html>
     {{#if document.notesText}}
     <div class="notes-text">
         <div class="section-title">{{editable "notesSectionLabel" labels.notesSectionLabel}}</div>
-        {{document.notesText}}
+        {{editable "settings.defaultNotesText" document.notesText}}
     </div>
     {{/if}}
 
     {{#if document.footerText}}
     <div class="payment-info">
         <strong>{{#ifOffer}}{{editable "paymentTermsTitleOffer" labels.paymentTermsTitleOffer}}{{else}}{{editable "paymentTermsTitleInvoice" labels.paymentTermsTitleInvoice}}{{/ifOffer}}:</strong><br>
-        {{document.footerText}}
+        {{editable "settings.defaultFooterText" document.footerText}}
     </div>
     {{/if}}
 
@@ -452,6 +452,11 @@ export function generatePDFHTMLFromTemplate(options: PDFTemplateOptions): string
   const { document, business, settings, interactive = false } = options;
   const isOffer = document.documentType === 'offer';
 
+  // Extract year and sequence from document number (e.g., "INV-2026-0042" -> year: "2026", seq: "0042")
+  const numberParts = document.documentNumber.split('-');
+  const documentYear = numberParts.length >= 2 ? numberParts[1] : new Date().getFullYear().toString();
+  const documentSeq = numberParts.length >= 3 ? numberParts[2] : '0001';
+
   const context = {
     document,
     business,
@@ -460,6 +465,8 @@ export function generatePDFHTMLFromTemplate(options: PDFTemplateOptions): string
     currencySymbol: settings.currencySymbol,
     isOffer,
     interactive,
+    documentYear,
+    documentSeq,
   };
 
   return compiledTemplate(context);

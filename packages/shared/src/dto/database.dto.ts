@@ -116,6 +116,12 @@ export const EMPTY_DATABASE: DatabaseDto = {
       // Payment terms
       paymentTermsTitleOffer: 'Terms',
       paymentTermsTitleInvoice: 'Payment Terms',
+      // Company details labels
+      telLabel: 'Tel:',
+      emailLabel: 'E-mail:',
+      kvkLabel: 'CoC:',
+      vatIdLabel: 'VAT:',
+      ibanLabel: 'IBAN:',
       // Footer
       thankYouText: 'Thank you for your business with {company}!',
       questionsTextOffer:

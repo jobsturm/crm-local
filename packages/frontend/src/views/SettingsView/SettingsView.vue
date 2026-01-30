@@ -235,6 +235,36 @@ const fieldInfo: Record<string, FieldConfig> = {
     tab: 'documents',
     isNumber: true,
   },
+  'settings.offerPrefix': {
+    getValue: () => settingsForm.value.offerPrefix ?? '',
+    setValue: (v) => (settingsForm.value.offerPrefix = v),
+    label: 'Offer Number Prefix',
+    tab: 'documents',
+  },
+  'settings.invoicePrefix': {
+    getValue: () => settingsForm.value.invoicePrefix ?? '',
+    setValue: (v) => (settingsForm.value.invoicePrefix = v),
+    label: 'Invoice Number Prefix',
+    tab: 'documents',
+  },
+  'settings.defaultIntroText': {
+    getValue: () => settingsForm.value.defaultIntroText ?? '',
+    setValue: (v) => (settingsForm.value.defaultIntroText = v),
+    label: 'Default Introduction Text',
+    tab: 'documents',
+  },
+  'settings.defaultNotesText': {
+    getValue: () => settingsForm.value.defaultNotesText ?? '',
+    setValue: (v) => (settingsForm.value.defaultNotesText = v),
+    label: 'Default Notes',
+    tab: 'documents',
+  },
+  'settings.defaultFooterText': {
+    getValue: () => settingsForm.value.defaultFooterText ?? '',
+    setValue: (v) => (settingsForm.value.defaultFooterText = v),
+    label: 'Default Footer Text',
+    tab: 'documents',
+  },
 
   // PDF Labels (tab: labels)
   offerTitle: {
@@ -367,6 +397,36 @@ const fieldInfo: Record<string, FieldConfig> = {
     getValue: () => labelsForm.value.questionsTextInvoice ?? '',
     setValue: (v) => (labelsForm.value.questionsTextInvoice = v),
     label: 'Questions Text (Invoice)',
+    tab: 'labels',
+  },
+  telLabel: {
+    getValue: () => labelsForm.value.telLabel ?? '',
+    setValue: (v) => (labelsForm.value.telLabel = v),
+    label: 'Phone Label',
+    tab: 'labels',
+  },
+  emailLabel: {
+    getValue: () => labelsForm.value.emailLabel ?? '',
+    setValue: (v) => (labelsForm.value.emailLabel = v),
+    label: 'Email Label',
+    tab: 'labels',
+  },
+  kvkLabel: {
+    getValue: () => labelsForm.value.kvkLabel ?? '',
+    setValue: (v) => (labelsForm.value.kvkLabel = v),
+    label: 'Chamber of Commerce Label',
+    tab: 'labels',
+  },
+  vatIdLabel: {
+    getValue: () => labelsForm.value.vatIdLabel ?? '',
+    setValue: (v) => (labelsForm.value.vatIdLabel = v),
+    label: 'VAT ID Label',
+    tab: 'labels',
+  },
+  ibanLabel: {
+    getValue: () => labelsForm.value.ibanLabel ?? '',
+    setValue: (v) => (labelsForm.value.ibanLabel = v),
+    label: 'IBAN Label',
     tab: 'labels',
   },
 };

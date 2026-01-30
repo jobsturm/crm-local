@@ -56,6 +56,13 @@ export interface DocumentLabelsDto {
   paymentTermsTitleOffer: string; // "Voorwaarden" / "Terms"
   paymentTermsTitleInvoice: string; // "Betalingsvoorwaarden" / "Payment Terms"
 
+  // === Company details labels ===
+  telLabel: string; // "Tel:" / "Phone:"
+  emailLabel: string; // "E-mail:" / "Email:"
+  kvkLabel: string; // "KvK:" / "Chamber of Commerce:"
+  vatIdLabel: string; // "VAT:" / "VAT ID:"
+  ibanLabel: string; // "IBAN:"
+
   // === Footer ===
   // Use {company} placeholder for company name, {email} for email, {phone} for phone
   thankYouText: string; // "Bedankt voor het vertrouwen in {company}!"
@@ -181,6 +188,13 @@ export const DEFAULT_LABELS: DocumentLabelsDto = {
   paymentTermsTitleOffer: 'Terms',
   paymentTermsTitleInvoice: 'Payment Terms',
 
+  // Company details labels
+  telLabel: 'Tel:',
+  emailLabel: 'E-mail:',
+  kvkLabel: 'CoC:',
+  vatIdLabel: 'VAT:',
+  ibanLabel: 'IBAN:',
+
   // Footer (use {company}, {email}, {phone} as placeholders)
   thankYouText: 'Thank you for your business with {company}!',
   questionsTextOffer:
@@ -225,6 +239,13 @@ export const DUTCH_LABELS: DocumentLabelsDto = {
   // Payment terms
   paymentTermsTitleOffer: 'Voorwaarden',
   paymentTermsTitleInvoice: 'Betalingsvoorwaarden',
+
+  // Company details labels
+  telLabel: 'Tel:',
+  emailLabel: 'E-mail:',
+  kvkLabel: 'KvK:',
+  vatIdLabel: 'BTW:',
+  ibanLabel: 'IBAN:',
 
   // Footer
   thankYouText: 'Bedankt voor het vertrouwen in {company}!',
