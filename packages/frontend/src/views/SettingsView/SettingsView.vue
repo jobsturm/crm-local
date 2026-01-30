@@ -536,13 +536,11 @@ function handleIframeMessage(event: MessageEvent) {
           wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
           
           // Naive UI wraps inputs - find the actual input/textarea element inside
-          const actualInput = wrapper.querySelector('input, textarea') as HTMLElement | null;
+          const actualInput = wrapper.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
           if (actualInput) {
             actualInput.focus();
             // Select all text so user can immediately replace it
-            if (actualInput instanceof HTMLInputElement || actualInput instanceof HTMLTextAreaElement) {
-              actualInput.select();
-            }
+            actualInput.select();
           }
           
           // Add a brief highlight effect to the wrapper

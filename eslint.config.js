@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
+import globals from 'globals';
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -57,6 +58,10 @@ export default tseslint.config(
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
+      },
+      // Browser globals (window, document, etc.) for Vue components
+      globals: {
+        ...globals.browser,
       },
     },
     rules: {
