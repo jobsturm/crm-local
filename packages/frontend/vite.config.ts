@@ -6,8 +6,11 @@ import { resolve } from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const isElectron = mode === 'electron' || process.env.ELECTRON === 'true';
+  const isProduction = command === 'build';
 
   return {
+    // Use relative paths for Electron production builds
+    base: isProduction ? './' : '/',
     plugins: [
       vue(),
       isElectron &&

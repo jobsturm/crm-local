@@ -5,6 +5,11 @@ All notable changes to Simpel CRM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-01-30
+
+### Fixed
+- Fixed asset loading in Windows builds (paths now relative instead of absolute)
+
 ## [1.0.0] - 2026-01-30
 
 ### Added
