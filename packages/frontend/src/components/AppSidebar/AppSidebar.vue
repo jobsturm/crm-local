@@ -3,7 +3,7 @@ import { h, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { NLayoutSider, NMenu, NSpace, NSelect, NGradientText, type MenuOption, type SelectOption } from 'naive-ui';
-import { HomeOutline, PeopleOutline, DocumentTextOutline, SettingsOutline, StatsChartOutline } from '@vicons/ionicons5';
+import { HomeOutline, PeopleOutline, DocumentTextOutline, SettingsOutline, StatsChartOutline, CogOutline } from '@vicons/ionicons5';
 import type { Component } from 'vue';
 import type { Locale } from '@/i18n';
 import { useSettingsStore } from '@/stores/settings';
@@ -40,8 +40,20 @@ const menuOptions = computed<MenuOption[]>(() => [
   },
   {
     label: () => t('settings'),
-    key: 'settings',
+    key: 'settings-group',
     icon: renderIcon(SettingsOutline),
+    children: [
+      {
+        label: () => t('settings.documents'),
+        key: 'settings',
+        icon: renderIcon(DocumentTextOutline),
+      },
+      {
+        label: () => t('settings.general'),
+        key: 'settings-general',
+        icon: renderIcon(CogOutline),
+      },
+    ],
   },
 ]);
 
@@ -51,6 +63,7 @@ const activeKey = computed(() => {
   if (path.startsWith('/customers')) return 'customers';
   if (path.startsWith('/documents')) return 'documents';
   if (path.startsWith('/financial')) return 'financial';
+  if (path === '/settings/general') return 'settings-general';
   if (path.startsWith('/settings')) return 'settings';
   return 'dashboard';
 });
@@ -58,6 +71,13 @@ const activeKey = computed(() => {
 function handleMenuSelect(key: string) {
   if (key === 'dashboard') {
     void router.push('/');
+  } else if (key === 'settings-general') {
+    void router.push('/settings/general');
+  } else if (key === 'settings') {
+    void router.push('/settings');
+  } else if (key === 'settings-group') {
+    // Don't navigate when clicking the group header
+    return;
   } else {
     void router.push(`/${key}`);
   }

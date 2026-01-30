@@ -10,6 +10,7 @@ import { DocumentListViewTranslations } from '../views/DocumentListView/Document
 import { DocumentDetailViewTranslations } from '../views/DocumentDetailView/DocumentDetailView.translations';
 import { DocumentFormViewTranslations } from '../views/DocumentFormView/DocumentFormView.translations';
 import { SettingsViewTranslations } from '../views/SettingsView/SettingsView.translations';
+import { GeneralSettingsViewTranslations } from '../views/GeneralSettingsView/GeneralSettingsView.translations';
 import { FinancialOverviewViewTranslations } from '../views/FinancialOverviewView/FinancialOverviewView.translations';
 import { DashboardViewTranslations } from '../views/DashboardView/DashboardView.translations';
 import { AppSidebarTranslations } from '../components/AppSidebar/AppSidebar.translations';
@@ -43,6 +44,7 @@ export const labels = combineLabels(
   DocumentDetailViewTranslations,
   DocumentFormViewTranslations,
   SettingsViewTranslations,
+  GeneralSettingsViewTranslations,
   FinancialOverviewViewTranslations,
   DashboardViewTranslations,
   AppSidebarTranslations,
