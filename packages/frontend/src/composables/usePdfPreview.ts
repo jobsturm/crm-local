@@ -38,6 +38,10 @@ export const FieldId = {
   // Labels - Shared
   LABEL_DOCUMENT_DATE: 'input-documentDateLabel',
   LABEL_DUE_DATE: 'input-dueDateLabel',
+  LABEL_INTRO_SECTION: 'input-introSectionLabel',
+  LABEL_NOTES_SECTION: 'input-notesSectionLabel',
+  LABEL_PAYMENT_TERMS_OFFER: 'input-paymentTermsTitleOffer',
+  LABEL_PAYMENT_TERMS_INVOICE: 'input-paymentTermsTitleInvoice',
   LABEL_DESCRIPTION: 'input-descriptionLabel',
   LABEL_QUANTITY: 'input-quantityLabel',
   LABEL_UNIT_PRICE: 'input-unitPriceLabel',

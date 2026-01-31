@@ -81,6 +81,21 @@ const model = defineModel<Partial<DocumentLabelsDto>>({ required: true });
     </NFormItem>
 
     <NDivider />
+    <NText strong>{{ t('settings.sectionHeaders') }}</NText>
+    <NFormItem :label="t('settings.introSectionLabel')" path="introSectionLabel">
+      <NInput :id="FieldId.LABEL_INTRO_SECTION" v-model:value="model.introSectionLabel" placeholder="Description" />
+    </NFormItem>
+    <NFormItem :label="t('settings.notesSectionLabel')" path="notesSectionLabel">
+      <NInput :id="FieldId.LABEL_NOTES_SECTION" v-model:value="model.notesSectionLabel" placeholder="Additional Information" />
+    </NFormItem>
+    <NFormItem :label="t('settings.paymentTermsOffer')" path="paymentTermsTitleOffer">
+      <NInput :id="FieldId.LABEL_PAYMENT_TERMS_OFFER" v-model:value="model.paymentTermsTitleOffer" placeholder="Terms" />
+    </NFormItem>
+    <NFormItem :label="t('settings.paymentTermsInvoice')" path="paymentTermsTitleInvoice">
+      <NInput :id="FieldId.LABEL_PAYMENT_TERMS_INVOICE" v-model:value="model.paymentTermsTitleInvoice" placeholder="Payment Terms" />
+    </NFormItem>
+
+    <NDivider />
     <NText strong>{{ t('settings.tableHeaders') }}</NText>
     <NFormItem :label="t('settings.description')" path="descriptionLabel">
       <NInput :id="FieldId.LABEL_DESCRIPTION" v-model:value="model.descriptionLabel" placeholder="Description" />
