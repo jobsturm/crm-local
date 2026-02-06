@@ -16,6 +16,7 @@ import {
   listSubdirectories,
   listJsonFiles,
 } from '@crm-local/shared/utils';
+import { runMigrations, needsMigration } from '../migrations';
 
 export class StorageService {
   private databasePath: string;
@@ -42,8 +43,15 @@ export class StorageService {
     if (fileExists(this.databasePath)) {
       const result = await safeReadJsonFile<DatabaseDto>(this.databasePath);
       if (result.success) {
-        this.database = result.data;
-        // TODO: Check version and run migrations if needed
+        // Check if migration is needed
+        if (needsMigration(result.data.version)) {
+          console.log(`Database version ${result.data.version} requires migration`);
+          this.database = runMigrations(result.data);
+          // Save the migrated database
+          await this.saveDatabase();
+        } else {
+          this.database = result.data;
+        }
       } else {
         console.error('Failed to load database:', result.error);
         throw new Error('Failed to load database');

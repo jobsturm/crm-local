@@ -64,12 +64,18 @@ export type {
   ThemePreference,
   LanguagePreference,
   FiscalYearStartMonth,
+  YearCounters,
   DocumentLabelsDto,
   SettingsDto,
   UpdateSettingsDto,
   SettingsResponseDto,
 } from './settings.dto';
-export { DEFAULT_LABELS, DUTCH_LABELS, DEFAULT_SETTINGS } from './settings.dto';
+export {
+  DEFAULT_LABELS,
+  DUTCH_LABELS,
+  DEFAULT_SETTINGS,
+  DEFAULT_DOCUMENT_NUMBER_FORMAT,
+} from './settings.dto';
 
 // Financial DTOs
 export type {
@@ -104,6 +110,15 @@ export type {
   PaginatedResponseDto,
   IdParamDto,
 } from './common.dto';
+
+// Product DTOs
+export type {
+  ProductDto,
+  CreateProductDto,
+  UpdateProductDto,
+  ProductResponseDto,
+  ProductListResponseDto,
+} from './product.dto';
 
 // Database DTOs
 export type { DatabaseDto, DocumentFileDto, InvoiceFileDto } from './database.dto';

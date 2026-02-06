@@ -18,6 +18,7 @@ import type { CustomerDto } from './customer.dto';
 import type { BusinessDto } from './business.dto';
 import type { SettingsDto } from './settings.dto';
 import type { DocumentDto } from './document.dto';
+import type { ProductDto } from './product.dto';
 
 /**
  * Main database file schema (excludes documents - stored separately)
@@ -29,6 +30,9 @@ export interface DatabaseDto {
 
   /** All customers */
   customers: CustomerDto[];
+
+  /** Product catalog */
+  products: ProductDto[];
 
   /** Business information */
   business: BusinessDto | null;
@@ -64,7 +68,7 @@ export interface InvoiceFileDto {
 }
 
 /** Current database version */
-export const CURRENT_DATABASE_VERSION = '1.0.0';
+export const CURRENT_DATABASE_VERSION = '1.2.0';
 
 /** Current document file version */
 export const CURRENT_DOCUMENT_VERSION = '1.0.0';
@@ -76,16 +80,27 @@ export const CURRENT_INVOICE_VERSION = '1.0.0';
 export const EMPTY_DATABASE: DatabaseDto = {
   version: CURRENT_DATABASE_VERSION,
   customers: [],
+  products: [],
   business: null,
   settings: {
     currency: 'EUR',
     currencySymbol: '€',
     defaultTaxRate: 21,
     defaultPaymentTermDays: 14,
+
+    // Offer numbering
     offerPrefix: 'OFF',
+    offerNumberFormat: '{PREFIX}-{YEAR}-{NUMBER:4}',
     nextOfferNumber: 1,
+    offerCountersByYear: {},
+
+    // Invoice numbering
     invoicePrefix: 'INV',
+    invoiceNumberFormat: '{PREFIX}-{YEAR}-{NUMBER:4}',
     nextInvoiceNumber: 1,
+    invoiceCountersByYear: {},
+
+    // Default texts
     defaultIntroText: undefined,
     defaultFooterText: undefined,
     labels: {

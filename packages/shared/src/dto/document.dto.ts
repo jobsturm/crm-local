@@ -152,6 +152,8 @@ export interface DocumentDto {
 export interface CreateDocumentDto {
   documentType: DocumentType;
   documentTitle?: string; // Optional, will use default based on type
+  /** Optional: override the auto-generated document number */
+  documentNumber?: string;
   customerId: string;
   items: CreateDocumentItemDto[];
   paymentTermDays?: number; // Optional, will use default from settings
@@ -164,6 +166,8 @@ export interface CreateDocumentDto {
 /** DTO for updating a document */
 export interface UpdateDocumentDto {
   documentTitle?: string;
+  /** Override document number (only allowed for draft documents) */
+  documentNumber?: string;
   customerId?: string;
   items?: CreateDocumentItemDto[];
   paymentTermDays?: number;

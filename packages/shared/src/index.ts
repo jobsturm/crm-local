@@ -8,3 +8,17 @@
 
 // DTOs and constants (browser-safe)
 export * from './dto';
+
+// Document number utilities (browser-safe)
+export {
+  formatDocumentNumber,
+  buildDocumentNumberVariables,
+  validateTemplate,
+  previewDocumentNumber,
+  TEMPLATE_VARIABLES,
+  DEFAULT_INVOICE_NUMBER_FORMAT,
+  DEFAULT_OFFER_NUMBER_FORMAT,
+  type TemplateVariable,
+  type DocumentNumberVariables,
+  type TemplateValidationResult,
+} from './utils/document-number';

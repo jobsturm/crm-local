@@ -28,6 +28,11 @@ import type {
   Quarter,
   DashboardStatsDto,
   DashboardResponseDto,
+  ProductDto,
+  ProductListResponseDto,
+  ProductResponseDto,
+  CreateProductDto,
+  UpdateProductDto,
 } from '@crm-local/shared';
 
 // API base URL management
@@ -293,4 +298,36 @@ export async function getFinancialOverview(
 export async function getDashboardStats(): Promise<DashboardStatsDto> {
   const res = await request<DashboardResponseDto>('/dashboard');
   return res.stats;
+}
+
+// ============ Products ============
+
+export async function getProducts(): Promise<ProductDto[]> {
+  const res = await request<ProductListResponseDto>('/products');
+  return res.products;
+}
+
+export async function getProduct(id: string): Promise<ProductDto> {
+  const res = await request<ProductResponseDto>(`/products/${id}`);
+  return res.product;
+}
+
+export async function createProduct(data: CreateProductDto): Promise<ProductDto> {
+  const res = await request<ProductResponseDto>('/products', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.product;
+}
+
+export async function updateProduct(id: string, data: UpdateProductDto): Promise<ProductDto> {
+  const res = await request<ProductResponseDto>(`/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  return res.product;
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  await request<undefined>(`/products/${id}`, { method: 'DELETE' });
 }

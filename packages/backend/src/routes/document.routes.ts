@@ -26,8 +26,67 @@ import type {
   CustomerDto,
   CreateDocumentItemDto,
   DocumentItemDto,
+  SettingsDto,
 } from '@crm-local/shared';
+import {
+  formatDocumentNumber,
+  buildDocumentNumberVariables,
+} from '@crm-local/shared/utils';
 import { notFound, badRequest } from '../middleware/error-handler.js';
+
+/**
+ * Generate a document number using the template system
+ *
+ * @param settings - Current settings
+ * @param isOffer - True for offers, false for invoices
+ * @param date - Date to use for year/month/day variables
+ * @returns Generated document number
+ */
+function generateDocumentNumber(
+  settings: Omit<SettingsDto, 'storagePath'>,
+  isOffer: boolean,
+  date: Date = new Date()
+): string {
+  const year = date.getFullYear().toString();
+
+  // Get the appropriate settings based on document type
+  const prefix = isOffer ? settings.offerPrefix : settings.invoicePrefix;
+  const format = isOffer ? settings.offerNumberFormat : settings.invoiceNumberFormat;
+  const globalCounter = isOffer ? settings.nextOfferNumber : settings.nextInvoiceNumber;
+  const countersByYear = isOffer ? settings.offerCountersByYear : settings.invoiceCountersByYear;
+
+  // Get per-year counter (default to 1 if not set for this year)
+  const yearCounter = countersByYear[year] ?? 1;
+
+  // Build variables and format the number
+  const variables = buildDocumentNumberVariables(prefix, globalCounter, yearCounter, date);
+  return formatDocumentNumber(format, variables);
+}
+
+/**
+ * Increment document counters after successful document creation
+ */
+function incrementCounters(
+  settings: Omit<SettingsDto, 'storagePath'>,
+  isOffer: boolean,
+  year: string
+): void {
+  if (isOffer) {
+    settings.nextOfferNumber++;
+    // Initialize year counter if needed, then increment
+    if (!settings.offerCountersByYear[year]) {
+      settings.offerCountersByYear[year] = 1;
+    }
+    settings.offerCountersByYear[year]++;
+  } else {
+    settings.nextInvoiceNumber++;
+    // Initialize year counter if needed, then increment
+    if (!settings.invoiceCountersByYear[year]) {
+      settings.invoiceCountersByYear[year] = 1;
+    }
+    settings.invoiceCountersByYear[year]++;
+  }
+}
 
 // Route parameter types
 interface IdParams {
@@ -177,13 +236,13 @@ export function createDocumentRoutes(storage: StorageService): Router {
 
         // Get settings for defaults
         const settings = db.settings;
+        const now = new Date();
+        const year = now.getFullYear().toString();
 
-        // Generate document number
+        // Generate document number using template system (or use custom if provided)
         const isOffer = data.documentType === 'offer';
-        const prefix = isOffer ? settings.offerPrefix : settings.invoicePrefix;
-        const nextNumber = isOffer ? settings.nextOfferNumber : settings.nextInvoiceNumber;
-        const year = new Date().getFullYear();
-        const documentNumber = `${prefix}-${year}-${String(nextNumber).padStart(4, '0')}`;
+        const documentNumber = data.documentNumber || generateDocumentNumber(settings, isOffer, now);
+        const shouldIncrementCounters = !data.documentNumber; // Only increment if auto-generated
 
         // Calculate totals
         const items: DocumentItemDto[] = data.items.map((item: CreateDocumentItemDto) => ({
@@ -201,7 +260,6 @@ export function createDocumentRoutes(storage: StorageService): Router {
 
         // Calculate due date
         const paymentTermDays = data.paymentTermDays ?? settings.defaultPaymentTermDays;
-        const now = new Date();
         const dueDate = new Date(now.getTime() + paymentTermDays * 24 * 60 * 60 * 1000);
 
         // Get default title from labels
@@ -250,15 +308,13 @@ export function createDocumentRoutes(storage: StorageService): Router {
         // Save document file
         await storage.saveDocument(document);
 
-        // Update next number in settings
-        await storage.updateDatabase((db) => {
-          if (isOffer) {
-            db.settings.nextOfferNumber++;
-          } else {
-            db.settings.nextInvoiceNumber++;
-          }
-          db.settings.updatedAt = now.toISOString();
-        });
+        // Update counters in settings (only if auto-generated number was used)
+        if (shouldIncrementCounters) {
+          await storage.updateDatabase((db) => {
+            incrementCounters(db.settings, isOffer, year);
+            db.settings.updatedAt = now.toISOString();
+          });
+        }
 
         res.status(201).json({ document });
       } catch (error) {
@@ -331,9 +387,21 @@ export function createDocumentRoutes(storage: StorageService): Router {
           ).toISOString();
         }
 
+        // Handle document number change (only allowed for drafts)
+        let documentNumber = document.documentNumber;
+        const documentNumberChanged = data.documentNumber && data.documentNumber !== document.documentNumber;
+        if (documentNumberChanged) {
+          if (document.status !== 'draft') {
+            next(badRequest('Document number can only be changed for draft documents'));
+            return;
+          }
+          documentNumber = data.documentNumber!;
+        }
+
         const updated: DocumentDto = {
           ...document,
           documentTitle: data.documentTitle ?? document.documentTitle,
+          documentNumber,
           items,
           subtotal,
           taxRate: data.taxRate ?? document.taxRate,
@@ -368,6 +436,10 @@ export function createDocumentRoutes(storage: StorageService): Router {
           };
         }
 
+        // If document number changed, delete old file first
+        if (documentNumberChanged) {
+          await storage.deleteDocument(document);
+        }
         await storage.saveDocument(updated);
         res.json({ document: updated });
       } catch (error) {
@@ -430,9 +502,10 @@ export function createDocumentRoutes(storage: StorageService): Router {
         const db = storage.getDatabase();
         const settings = db.settings;
         const now = new Date();
+        const year = now.getFullYear().toString();
 
-        // Generate invoice number
-        const invoiceNumber = `${settings.invoicePrefix}-${now.getFullYear()}-${String(settings.nextInvoiceNumber).padStart(4, '0')}`;
+        // Generate invoice number using template system
+        const invoiceNumber = generateDocumentNumber(settings, false, now);
 
         // Calculate new due date
         const terms = paymentTermDays ?? offer.paymentTermDays;
@@ -482,9 +555,9 @@ export function createDocumentRoutes(storage: StorageService): Router {
         };
         await storage.saveDocument(updatedOffer);
 
-        // Update next invoice number
+        // Update invoice counters (both global and per-year)
         await storage.updateDatabase((db) => {
-          db.settings.nextInvoiceNumber++;
+          incrementCounters(db.settings, false, year);
           db.settings.updatedAt = now.toISOString();
         });
 

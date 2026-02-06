@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NForm,
@@ -6,13 +7,32 @@ import {
   NInput,
   NInputNumber,
   NDivider,
+  NText,
+  NCollapse,
+  NCollapseItem,
 } from 'naive-ui';
 import type { UpdateSettingsDto } from '@crm-local/shared';
 import { FieldId } from '@/composables/usePdfPreview';
+import DocumentNumberingSection from './DocumentNumberingSection.vue';
 
 const { t } = useI18n();
 
 const model = defineModel<UpdateSettingsDto>({ required: true });
+
+// Ensure countersByYear objects exist
+const invoiceCountersByYear = computed({
+  get: () => model.value.invoiceCountersByYear ?? {},
+  set: (value: Record<string, number>) => {
+    model.value.invoiceCountersByYear = value;
+  },
+});
+
+const offerCountersByYear = computed({
+  get: () => model.value.offerCountersByYear ?? {},
+  set: (value: Record<string, number>) => {
+    model.value.offerCountersByYear = value;
+  },
+});
 </script>
 
 <template>
@@ -33,15 +53,45 @@ const model = defineModel<UpdateSettingsDto>({ required: true });
       <NInputNumber v-model:value="model.defaultPaymentTermDays" :min="0" style="width: 100%" />
     </NFormItem>
 
-    <NDivider>{{ t('settings.documentNumbering') }}</NDivider>
+    <NDivider>{{ t('settings.numbering.invoiceTitle') }}</NDivider>
 
-    <NFormItem :label="t('settings.offerPrefix')" path="offerPrefix">
-      <NInput :id="FieldId.SETTINGS_OFFER_PREFIX" v-model:value="model.offerPrefix" placeholder="OFF" />
-    </NFormItem>
+    <DocumentNumberingSection
+      v-model:format="model.invoiceNumberFormat"
+      v-model:prefix="model.invoicePrefix"
+      v-model:next-number="model.nextInvoiceNumber"
+      v-model:counters-by-year="invoiceCountersByYear"
+      :format-field-id="FieldId.SETTINGS_INVOICE_FORMAT"
+      :prefix-field-id="FieldId.SETTINGS_INVOICE_PREFIX"
+      prefix-placeholder="INV"
+      format-path="invoiceNumberFormat"
+      prefix-path="invoicePrefix"
+      next-number-path="nextInvoiceNumber"
+      counters-by-year-path="invoiceCountersByYear"
+    />
 
-    <NFormItem :label="t('settings.invoicePrefix')" path="invoicePrefix">
-      <NInput :id="FieldId.SETTINGS_INVOICE_PREFIX" v-model:value="model.invoicePrefix" placeholder="INV" />
-    </NFormItem>
+    <NDivider>{{ t('settings.numbering.offerTitle') }}</NDivider>
+
+    <DocumentNumberingSection
+      v-model:format="model.offerNumberFormat"
+      v-model:prefix="model.offerPrefix"
+      v-model:next-number="model.nextOfferNumber"
+      v-model:counters-by-year="offerCountersByYear"
+      :format-field-id="FieldId.SETTINGS_OFFER_FORMAT"
+      :prefix-field-id="FieldId.SETTINGS_OFFER_PREFIX"
+      prefix-placeholder="OFF"
+      format-path="offerNumberFormat"
+      prefix-path="offerPrefix"
+      next-number-path="nextOfferNumber"
+      counters-by-year-path="offerCountersByYear"
+    />
+
+    <NCollapse>
+      <NCollapseItem :title="t('settings.numbering.help')" name="help">
+        <NText depth="2" style="font-size: 13px; white-space: pre-line">
+          {{ t('settings.numbering.helpText') }}
+        </NText>
+      </NCollapseItem>
+    </NCollapse>
 
     <NDivider>{{ t('settings.defaultTexts') }}</NDivider>
 

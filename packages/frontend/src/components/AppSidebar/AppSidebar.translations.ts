@@ -7,6 +7,7 @@ export const AppSidebarTranslations = {
     'settings': 'Settings',
     'settings.documents': 'Document Settings',
     'settings.general': 'General',
+    'products': 'Products',
   },
   'nl-NL': {
     'dashboard': 'Dashboard',
@@ -16,5 +17,6 @@ export const AppSidebarTranslations = {
     'settings': 'Instellingen',
     'settings.documents': 'Documentinstellingen',
     'settings.general': 'Algemeen',
+    'products': 'Producten',
   },
 } as const;

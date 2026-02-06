@@ -70,6 +70,13 @@ export function createSettingsRoutes(storage: StorageService): Router {
           }
           if (data.offerPrefix !== undefined) db.settings.offerPrefix = data.offerPrefix;
           if (data.invoicePrefix !== undefined) db.settings.invoicePrefix = data.invoicePrefix;
+          // Document numbering format and counters
+          if (data.offerNumberFormat !== undefined) db.settings.offerNumberFormat = data.offerNumberFormat;
+          if (data.invoiceNumberFormat !== undefined) db.settings.invoiceNumberFormat = data.invoiceNumberFormat;
+          if (data.nextOfferNumber !== undefined) db.settings.nextOfferNumber = data.nextOfferNumber;
+          if (data.nextInvoiceNumber !== undefined) db.settings.nextInvoiceNumber = data.nextInvoiceNumber;
+          if (data.offerCountersByYear !== undefined) db.settings.offerCountersByYear = data.offerCountersByYear;
+          if (data.invoiceCountersByYear !== undefined) db.settings.invoiceCountersByYear = data.invoiceCountersByYear;
           if (data.defaultIntroText !== undefined) {
             db.settings.defaultIntroText = data.defaultIntroText;
           }

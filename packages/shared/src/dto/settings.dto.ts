@@ -70,6 +70,12 @@ export interface DocumentLabelsDto {
   questionsTextInvoice: string; // "Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}."
 }
 
+/**
+ * Per-year counter storage
+ * Keys are year strings (e.g., "2026"), values are the next number for that year
+ */
+export type YearCounters = Record<string, number>;
+
 /** Full settings object */
 export interface SettingsDto {
   /** Path to the JSON database file */
@@ -87,17 +93,47 @@ export interface SettingsDto {
   /** Default payment term in days */
   defaultPaymentTermDays: number;
 
-  /** Prefix for offer numbers (e.g., "OFF" for "OFF-2026-0001") */
+  // === Offer Numbering ===
+
+  /** Prefix for offer numbers (used by {PREFIX} variable) */
   offerPrefix: string;
 
-  /** Next offer number counter */
+  /**
+   * Template format for offer numbers
+   * Variables: {PREFIX}, {YEAR}, {YY}, {MONTH}, {DAY}, {NUMBER}, {NUMBER_YEAR}
+   * Padding: {NUMBER:4} pads to 4 digits with zeros
+   * @example "{PREFIX}-{YEAR}-{NUMBER:4}" → "OFF-2026-0042"
+   * @example "{YY}.{NUMBER_YEAR:3}" → "26.005"
+   */
+  offerNumberFormat: string;
+
+  /** Next offer number counter (global, all-time) - used by {NUMBER} */
   nextOfferNumber: number;
 
-  /** Prefix for invoice numbers (e.g., "INV" for "INV-2026-0001") */
+  /** Per-year offer counters - used by {NUMBER_YEAR} */
+  offerCountersByYear: YearCounters;
+
+  // === Invoice Numbering ===
+
+  /** Prefix for invoice numbers (used by {PREFIX} variable) */
   invoicePrefix: string;
 
-  /** Next invoice number counter */
+  /**
+   * Template format for invoice numbers
+   * Variables: {PREFIX}, {YEAR}, {YY}, {MONTH}, {DAY}, {NUMBER}, {NUMBER_YEAR}
+   * Padding: {NUMBER:4} pads to 4 digits with zeros
+   * @example "{PREFIX}-{YEAR}-{NUMBER:4}" → "INV-2026-0042"
+   * @example "{YY}.{NUMBER_YEAR:3}" → "26.005"
+   */
+  invoiceNumberFormat: string;
+
+  /** Next invoice number counter (global, all-time) - used by {NUMBER} */
   nextInvoiceNumber: number;
+
+  /** Per-year invoice counters - used by {NUMBER_YEAR} */
+  invoiceCountersByYear: YearCounters;
+
+  // === Default Texts ===
 
   /** Default intro text for new documents */
   defaultIntroText?: string;
@@ -134,12 +170,26 @@ export interface UpdateSettingsDto {
   currencySymbol?: string;
   defaultTaxRate?: number;
   defaultPaymentTermDays?: number;
+
+  // Offer numbering
   offerPrefix?: string;
+  offerNumberFormat?: string;
+  nextOfferNumber?: number;
+  offerCountersByYear?: YearCounters;
+
+  // Invoice numbering
   invoicePrefix?: string;
+  invoiceNumberFormat?: string;
+  nextInvoiceNumber?: number;
+  invoiceCountersByYear?: YearCounters;
+
+  // Default texts
   defaultIntroText?: string;
   defaultNotesText?: string;
   defaultFooterText?: string;
   labels?: Partial<DocumentLabelsDto>;
+
+  // UI preferences
   theme?: ThemePreference;
   language?: LanguagePreference;
   dateFormat?: string;
@@ -254,20 +304,35 @@ export const DUTCH_LABELS: DocumentLabelsDto = {
     'Bij vragen over deze factuur kunt u contact opnemen via {email} of {phone}.',
 };
 
+/** Default document number format (matches legacy hardcoded format) */
+export const DEFAULT_DOCUMENT_NUMBER_FORMAT = '{PREFIX}-{YEAR}-{NUMBER:4}';
+
 /** Default settings values */
 export const DEFAULT_SETTINGS: Omit<SettingsDto, 'storagePath' | 'updatedAt'> = {
   currency: 'EUR',
   currencySymbol: '€',
   defaultTaxRate: 21,
   defaultPaymentTermDays: 14,
+
+  // Offer numbering
   offerPrefix: 'OFF',
+  offerNumberFormat: DEFAULT_DOCUMENT_NUMBER_FORMAT,
   nextOfferNumber: 1,
+  offerCountersByYear: {},
+
+  // Invoice numbering
   invoicePrefix: 'INV',
+  invoiceNumberFormat: DEFAULT_DOCUMENT_NUMBER_FORMAT,
   nextInvoiceNumber: 1,
+  invoiceCountersByYear: {},
+
+  // Default texts
   defaultIntroText: undefined,
   defaultNotesText: undefined,
   defaultFooterText: undefined,
   labels: DEFAULT_LABELS,
+
+  // UI preferences
   theme: 'system',
   language: 'en-US',
   dateFormat: 'DD-MM-YYYY',

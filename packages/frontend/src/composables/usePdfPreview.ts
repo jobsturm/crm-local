@@ -22,6 +22,8 @@ export const FieldId = {
   SETTINGS_TAX_RATE: 'input-settings-defaultTaxRate',
   SETTINGS_OFFER_PREFIX: 'input-settings-offerPrefix',
   SETTINGS_INVOICE_PREFIX: 'input-settings-invoicePrefix',
+  SETTINGS_OFFER_FORMAT: 'input-settings-offerNumberFormat',
+  SETTINGS_INVOICE_FORMAT: 'input-settings-invoiceNumberFormat',
   SETTINGS_INTRO_TEXT: 'input-settings-defaultIntroText',
   SETTINGS_NOTES_TEXT: 'input-settings-defaultNotesText',
   SETTINGS_FOOTER_TEXT: 'input-settings-defaultFooterText',
@@ -102,6 +104,14 @@ export function usePdfPreview(
       defaultFooterText: settingsForm.value.defaultFooterText,
       offerPrefix: settingsForm.value.offerPrefix,
       invoicePrefix: settingsForm.value.invoicePrefix,
+      // Document number format templates
+      offerNumberFormat: settingsForm.value.offerNumberFormat,
+      invoiceNumberFormat: settingsForm.value.invoiceNumberFormat,
+      // Document number counters
+      nextOfferNumber: settingsForm.value.nextOfferNumber,
+      nextInvoiceNumber: settingsForm.value.nextInvoiceNumber,
+      offerCountersByYear: settingsForm.value.offerCountersByYear,
+      invoiceCountersByYear: settingsForm.value.invoiceCountersByYear,
       interactive: previewMode.value === 'edit',
     });
   });
@@ -213,6 +223,20 @@ export function usePdfPreview(
       label: 'Invoice Number Prefix',
       tab: 'documents',
       inputId: FieldId.SETTINGS_INVOICE_PREFIX,
+    },
+    'settings.offerNumberFormat': {
+      getValue: () => settingsForm.value.offerNumberFormat ?? '',
+      setValue: () => {}, // Read-only, user picks from dropdown
+      label: 'Offer Number Format',
+      tab: 'documents',
+      inputId: FieldId.SETTINGS_OFFER_FORMAT,
+    },
+    'settings.invoiceNumberFormat': {
+      getValue: () => settingsForm.value.invoiceNumberFormat ?? '',
+      setValue: () => {}, // Read-only, user picks from dropdown
+      label: 'Invoice Number Format',
+      tab: 'documents',
+      inputId: FieldId.SETTINGS_INVOICE_FORMAT,
     },
     'settings.defaultIntroText': {
       getValue: () => settingsForm.value.defaultIntroText ?? '',

@@ -5,7 +5,7 @@
  */
 
 import type { DocumentDto, BusinessDto, SettingsDto, DocumentLabelsDto, CurrencyCode } from '@crm-local/shared';
-import { DEFAULT_LABELS } from '@crm-local/shared';
+import { DEFAULT_LABELS, formatDocumentNumber, buildDocumentNumberVariables, DEFAULT_INVOICE_NUMBER_FORMAT, DEFAULT_OFFER_NUMBER_FORMAT } from '@crm-local/shared';
 import { generatePDFHTML } from './pdf-generator';
 
 /**
@@ -120,6 +120,14 @@ export interface PreviewOptions {
   /** Document number prefixes */
   offerPrefix?: string;
   invoicePrefix?: string;
+  /** Document number format templates */
+  offerNumberFormat?: string;
+  invoiceNumberFormat?: string;
+  /** Document number counters */
+  nextOfferNumber?: number;
+  nextInvoiceNumber?: number;
+  offerCountersByYear?: Record<string, number>;
+  invoiceCountersByYear?: Record<string, number>;
   /** Enable interactive mode - makes labels clickable for editing */
   interactive?: boolean;
 }
@@ -141,15 +149,28 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     defaultFooterText,
     offerPrefix = 'OFF',
     invoicePrefix = 'INV',
+    offerNumberFormat = DEFAULT_OFFER_NUMBER_FORMAT,
+    invoiceNumberFormat = DEFAULT_INVOICE_NUMBER_FORMAT,
+    nextOfferNumber = 1,
+    nextInvoiceNumber = 1,
+    offerCountersByYear = {},
+    invoiceCountersByYear = {},
     interactive = false,
   } = options;
 
   const baseDocument = documentType === 'offer' ? SAMPLE_OFFER : SAMPLE_INVOICE;
   
-  // Update document number with the correct prefix
-  const prefix = documentType === 'offer' ? offerPrefix : invoicePrefix;
-  const baseNumber = baseDocument.documentNumber.split('-').slice(1).join('-'); // Get "2026-0042" part
-  const updatedDocumentNumber = `${prefix}-${baseNumber}`;
+  // Generate document number using the template system
+  const isOffer = documentType === 'offer';
+  const prefix = isOffer ? offerPrefix : invoicePrefix;
+  const format = isOffer ? offerNumberFormat : invoiceNumberFormat;
+  const globalCounter = isOffer ? nextOfferNumber : nextInvoiceNumber;
+  const countersByYear = isOffer ? offerCountersByYear : invoiceCountersByYear;
+  const currentYear = new Date().getFullYear().toString();
+  const yearCounter = countersByYear[currentYear] ?? 1;
+  
+  const variables = buildDocumentNumberVariables(prefix, globalCounter, yearCounter);
+  const updatedDocumentNumber = formatDocumentNumber(format, variables);
 
   // Update document with custom settings
   const updatedDocument: DocumentDto = {
@@ -175,10 +196,16 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     currencySymbol,
     defaultTaxRate,
     defaultPaymentTermDays,
+    // Offer numbering
     offerPrefix,
-    nextOfferNumber: 1,
+    offerNumberFormat,
+    nextOfferNumber,
+    offerCountersByYear,
+    // Invoice numbering
     invoicePrefix,
-    nextInvoiceNumber: 1,
+    invoiceNumberFormat,
+    nextInvoiceNumber,
+    invoiceCountersByYear,
     labels: {
       ...DEFAULT_LABELS,
       ...labels,

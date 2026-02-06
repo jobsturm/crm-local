@@ -47,8 +47,17 @@ const settingsForm = ref<UpdateSettingsDto>({
   currencySymbol: '€',
   defaultTaxRate: 21,
   defaultPaymentTermDays: 14,
+  // Offer numbering
   offerPrefix: 'OFF',
+  offerNumberFormat: '{PREFIX}-{YEAR}-{NUMBER:4}',
+  nextOfferNumber: 1,
+  offerCountersByYear: {},
+  // Invoice numbering
   invoicePrefix: 'INV',
+  invoiceNumberFormat: '{PREFIX}-{YEAR}-{NUMBER:4}',
+  nextInvoiceNumber: 1,
+  invoiceCountersByYear: {},
+  // Default texts
   defaultIntroText: '',
   defaultNotesText: '',
   defaultFooterText: '',
@@ -138,8 +147,17 @@ async function loadData() {
         currencySymbol: store.settings.currencySymbol,
         defaultTaxRate: store.settings.defaultTaxRate,
         defaultPaymentTermDays: store.settings.defaultPaymentTermDays,
+        // Offer numbering
         offerPrefix: store.settings.offerPrefix,
+        offerNumberFormat: store.settings.offerNumberFormat,
+        nextOfferNumber: store.settings.nextOfferNumber,
+        offerCountersByYear: { ...store.settings.offerCountersByYear },
+        // Invoice numbering
         invoicePrefix: store.settings.invoicePrefix,
+        invoiceNumberFormat: store.settings.invoiceNumberFormat,
+        nextInvoiceNumber: store.settings.nextInvoiceNumber,
+        invoiceCountersByYear: { ...store.settings.invoiceCountersByYear },
+        // Default texts
         defaultIntroText: store.settings.defaultIntroText,
         defaultNotesText: store.settings.defaultNotesText,
         defaultFooterText: store.settings.defaultFooterText,

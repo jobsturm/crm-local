@@ -65,6 +65,11 @@ const routes: RouteRecordRaw[] = [
     name: 'settings-general',
     component: () => import('@/views/GeneralSettingsView/GeneralSettingsView.vue'),
   },
+  {
+    path: '/products',
+    name: 'products',
+    component: () => import('@/views/ProductListView/ProductListView.vue'),
+  },
 ];
 
 export const router = createRouter({

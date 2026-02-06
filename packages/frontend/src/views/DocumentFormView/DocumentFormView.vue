@@ -16,16 +16,21 @@ import {
   NDivider,
   NGrid,
   NGridItem,
+  NAutoComplete,
+  NAlert,
   useMessage,
   type FormInst,
   type FormRules,
   type SelectOption,
+  type AutoCompleteOption,
 } from 'naive-ui';
 import { ArrowBackOutline, AddOutline, TrashOutline } from '@vicons/ionicons5';
 import type { CreateDocumentDto, DocumentType } from '@crm-local/shared';
+import { formatDocumentNumber, buildDocumentNumberVariables } from '@crm-local/shared';
 import { useDocumentStore } from '@/stores/documents';
 import { useCustomerStore } from '@/stores/customers';
 import { useSettingsStore } from '@/stores/settings';
+import { useProductStore } from '@/stores/products';
 
 const route = useRoute();
 const router = useRouter();
@@ -35,6 +40,20 @@ const message = useMessage();
 const documentStore = useDocumentStore();
 const customerStore = useCustomerStore();
 const settingsStore = useSettingsStore();
+const productStore = useProductStore();
+
+// Product catalog hint - dismissible and persistent
+const PRODUCT_HINT_DISMISSED_KEY = 'crm-product-hint-dismissed';
+const productHintDismissed = ref(localStorage.getItem(PRODUCT_HINT_DISMISSED_KEY) === 'true');
+
+const showProductHint = computed(() => {
+  return !productHintDismissed.value && productStore.products.length === 0;
+});
+
+function dismissProductHint() {
+  productHintDismissed.value = true;
+  localStorage.setItem(PRODUCT_HINT_DISMISSED_KEY, 'true');
+}
 
 const formRef = ref<FormInst | null>(null);
 const loading = ref(false);
@@ -51,6 +70,7 @@ interface FormData {
   documentType: DocumentType;
   customerId: string | null;
   documentTitle: string;
+  documentNumber: string; // Editable for drafts
   items: FormItem[];
   paymentTermDays: number;
   taxRate: number;
@@ -63,6 +83,7 @@ const formValue = ref<FormData>({
   documentType: 'offer',
   customerId: null,
   documentTitle: '',
+  documentNumber: '', // Empty = auto-generate
   items: [{ description: '', quantity: 1, unitPrice: 0 }],
   paymentTermDays: 14,
   taxRate: 21,
@@ -71,15 +92,58 @@ const formValue = ref<FormData>({
   footerText: '',
 });
 
-const rules = computed<FormRules>(() => ({
-  customerId: { required: true, message: t('documentForm.selectCustomer') },
-  items: {
-    type: 'array',
-    required: true,
-    min: 1,
-    message: t('documentForm.itemRequired'),
-  },
-}));
+// Track the original document for edit mode
+const originalDocument = ref<{ documentNumber: string; status: string } | null>(null);
+
+// Whether we can edit the document number (only for new docs or drafts)
+const canEditDocumentNumber = computed(() => {
+  if (!isEdit.value) return true; // New document
+  return originalDocument.value?.status === 'draft';
+});
+
+// Compute the placeholder showing what will be auto-generated
+const documentNumberPlaceholder = computed(() => {
+  if (isEdit.value) {
+    // When editing, show the current number (can't be empty)
+    return originalDocument.value?.documentNumber ?? '';
+  }
+  
+  // When creating, show what will be auto-generated
+  const settings = settingsStore.settings;
+  if (!settings) return t('documentForm.documentNumberPlaceholder');
+  
+  const isOffer = formValue.value.documentType === 'offer';
+  const format = isOffer ? settings.offerNumberFormat : settings.invoiceNumberFormat;
+  const prefix = isOffer ? settings.offerPrefix : settings.invoicePrefix;
+  const globalCounter = isOffer ? settings.nextOfferNumber : settings.nextInvoiceNumber;
+  const yearCounters = isOffer ? settings.offerCountersByYear : settings.invoiceCountersByYear;
+  const currentYear = new Date().getFullYear().toString();
+  const yearCounter = yearCounters?.[currentYear] ?? 1;
+  
+  if (!format) return t('documentForm.documentNumberPlaceholder');
+  
+  const variables = buildDocumentNumberVariables(prefix ?? '', globalCounter ?? 1, yearCounter);
+  return formatDocumentNumber(format, variables);
+});
+
+const rules = computed<FormRules>(() => {
+  const baseRules: FormRules = {
+    customerId: { required: true, message: t('documentForm.selectCustomer') },
+    items: {
+      type: 'array',
+      required: true,
+      min: 1,
+      message: t('documentForm.itemRequired'),
+    },
+  };
+  
+  // Document number is required when editing (can't leave it empty)
+  if (isEdit.value) {
+    baseRules.documentNumber = { required: true, message: t('documentForm.documentNumberRequired') };
+  }
+  
+  return baseRules;
+});
 
 const documentTypeOptions = computed<SelectOption[]>(() => [
   { label: t('documentForm.offer'), value: 'offer' },
@@ -118,6 +182,33 @@ function removeItem(index: number) {
   }
 }
 
+// Product autocomplete - search anywhere in description
+function getProductOptions(query: string): AutoCompleteOption[] {
+  if (!query) {
+    // Show all products when no query
+    return productStore.products.map((p) => ({
+      label: `${p.description} (${settingsStore.settings?.currencySymbol ?? '€'}${p.defaultPrice.toFixed(2)})`,
+      value: p.id,
+    }));
+  }
+  const lowerQuery = query.toLowerCase();
+  return productStore.products
+    .filter((p) => p.description.toLowerCase().includes(lowerQuery))
+    .map((p) => ({
+      label: `${p.description} (${settingsStore.settings?.currencySymbol ?? '€'}${p.defaultPrice.toFixed(2)})`,
+      value: p.id,
+    }));
+}
+
+// When user selects a product from autocomplete, fill description AND price
+function handleProductSelect(productId: string, itemIndex: number) {
+  const product = productStore.getProductById(productId);
+  if (product) {
+    formValue.value.items[itemIndex]!.description = product.description;
+    formValue.value.items[itemIndex]!.unitPrice = product.defaultPrice;
+  }
+}
+
 async function handleSubmit() {
   try {
     await formRef.value?.validate();
@@ -133,6 +224,8 @@ async function handleSubmit() {
       documentType: formValue.value.documentType,
       customerId: formValue.value.customerId,
       documentTitle: formValue.value.documentTitle || undefined,
+      // Only include custom document number if user provided one
+      documentNumber: formValue.value.documentNumber?.trim() || undefined,
       items: formValue.value.items.map((item) => ({
         description: item.description,
         quantity: item.quantity,
@@ -146,7 +239,13 @@ async function handleSubmit() {
     };
 
     if (isEdit.value && documentId.value) {
-      await documentStore.updateDocument(documentId.value, data);
+      await documentStore.updateDocument(documentId.value, {
+        ...data,
+        // For updates, only send documentNumber if it changed
+        documentNumber: formValue.value.documentNumber !== originalDocument.value?.documentNumber
+          ? formValue.value.documentNumber?.trim()
+          : undefined,
+      });
       message.success(t('documentForm.updated'));
     } else {
       const doc = await documentStore.createDocument(data);
@@ -176,7 +275,11 @@ watch(
 async function loadData() {
   loading.value = true;
   try {
-    await Promise.all([customerStore.fetchCustomers(), settingsStore.fetchSettings()]);
+    await Promise.all([
+      customerStore.fetchCustomers(),
+      settingsStore.fetchSettings(),
+      productStore.fetchProducts(),
+    ]);
 
     // Set defaults from settings
     if (settingsStore.settings) {
@@ -191,10 +294,16 @@ async function loadData() {
     // If editing, load document
     if (isEdit.value && documentId.value) {
       const doc = await documentStore.fetchDocument(documentId.value);
+      // Store original for comparison
+      originalDocument.value = {
+        documentNumber: doc.documentNumber,
+        status: doc.status,
+      };
       formValue.value = {
         documentType: doc.documentType,
         customerId: doc.customerId,
         documentTitle: doc.documentTitle,
+        documentNumber: doc.documentNumber,
         items: doc.items.map((item) => ({
           description: item.description,
           quantity: item.quantity,
@@ -245,6 +354,14 @@ onMounted(loadData);
 
                 <NFormItem :label="t('documentForm.documentTitle')" path="documentTitle">
                   <NInput v-model:value="formValue.documentTitle" :placeholder="t('documentForm.documentTitlePlaceholder')" />
+                </NFormItem>
+
+                <NFormItem :label="t('documentForm.documentNumber')" path="documentNumber">
+                  <NInput
+                    v-model:value="formValue.documentNumber"
+                    :placeholder="documentNumberPlaceholder"
+                    :disabled="!canEditDocumentNumber"
+                  />
                 </NFormItem>
 
                 <NFormItem :label="t('documentForm.customer')" path="customerId">
@@ -307,38 +424,54 @@ onMounted(loadData);
           <NGridItem>
             <NCard :title="t('documentForm.items')">
               <NSpace vertical :size="16">
+                <NAlert
+                  v-if="showProductHint"
+                  type="info"
+                  closable
+                  @close="dismissProductHint"
+                >
+                  {{ t('documentForm.productHint') }}
+                  <RouterLink to="/products">{{ t('documentForm.productHintLink') }}</RouterLink>
+                </NAlert>
+
                 <NSpace v-for="(item, index) in formValue.items" :key="index" vertical :size="8">
-                  <NGrid :cols="12" :x-gap="8">
-                    <NGridItem :span="6">
-                      <NInput v-model:value="item.description" :placeholder="t('documentForm.description')" />
-                    </NGridItem>
-                    <NGridItem :span="2">
-                      <NInputNumber v-model:value="item.quantity" :min="1" :placeholder="t('documentForm.quantity')" />
-                    </NGridItem>
-                    <NGridItem :span="3">
-                      <NInputNumber
-                        v-model:value="item.unitPrice"
-                        :min="0"
-                        :precision="2"
-                        :placeholder="t('documentForm.unitPrice')"
-                      >
-                        <template #prefix>€</template>
-                      </NInputNumber>
-                    </NGridItem>
-                    <NGridItem :span="1">
-                      <NButton
-                        quaternary
-                        circle
-                        type="error"
-                        :disabled="formValue.items.length <= 1"
-                        @click="removeItem(index)"
-                      >
-                        <template #icon>
-                          <TrashOutline />
-                        </template>
-                      </NButton>
-                    </NGridItem>
-                  </NGrid>
+                  <!-- Row 1: Description with autocomplete from product catalog -->
+                  <NAutoComplete
+                    v-model:value="item.description"
+                    :options="getProductOptions(item.description)"
+                    :placeholder="t('documentForm.description')"
+                    :get-show="() => true"
+                    @select="(id: string) => handleProductSelect(id, index)"
+                  />
+                  <!-- Row 2: Qty, Price, Delete -->
+                  <NSpace :size="8" :wrap="false">
+                    <NInputNumber
+                      v-model:value="item.quantity"
+                      :min="1"
+                      :placeholder="t('documentForm.quantity')"
+                      style="width: 100px"
+                    />
+                    <NInputNumber
+                      v-model:value="item.unitPrice"
+                      :min="0"
+                      :precision="2"
+                      :placeholder="t('documentForm.unitPrice')"
+                      style="flex: 1; min-width: 120px"
+                    >
+                      <template #prefix>€</template>
+                    </NInputNumber>
+                    <NButton
+                      quaternary
+                      circle
+                      type="error"
+                      :disabled="formValue.items.length <= 1"
+                      @click="removeItem(index)"
+                    >
+                      <template #icon>
+                        <TrashOutline />
+                      </template>
+                    </NButton>
+                  </NSpace>
                 </NSpace>
 
                 <NButton dashed block @click="addItem">

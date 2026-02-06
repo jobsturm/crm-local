@@ -18,6 +18,7 @@ import { AppSidebarTranslations } from '../components/AppSidebar/AppSidebar.tran
 import { CustomerFormModalTranslations } from '../components/CustomerFormModal/CustomerFormModal.translations';
 import { updateTranslations } from '../components/UpdateNotification/UpdateNotification.translations';
 import { OnboardingViewTranslations } from '../views/OnboardingView/OnboardingView.translations';
+import { ProductListViewTranslations } from '../views/ProductListView/ProductListView.translations';
 
 // Combine all labels with flat structure
 function combineLabels(...labelObjects: Array<Record<string, Record<string, string>>>): Record<string, Record<string, string>> {
@@ -54,7 +55,8 @@ export const labels = combineLabels(
   AppSidebarTranslations,
   CustomerFormModalTranslations,
   updateTranslations,
-  OnboardingViewTranslations
+  OnboardingViewTranslations,
+  ProductListViewTranslations
 );
 
 export type Locale = 'en-US' | 'nl-NL';

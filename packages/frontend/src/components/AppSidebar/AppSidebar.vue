@@ -3,7 +3,7 @@ import { h, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { NLayoutSider, NMenu, NSpace, NGradientText, type MenuOption } from 'naive-ui';
-import { HomeOutline, PeopleOutline, DocumentTextOutline, SettingsOutline, StatsChartOutline, CogOutline } from '@vicons/ionicons5';
+import { HomeOutline, PeopleOutline, DocumentTextOutline, SettingsOutline, StatsChartOutline, CogOutline, PricetagsOutline } from '@vicons/ionicons5';
 import type { Component } from 'vue';
 
 const router = useRouter();
@@ -46,6 +46,11 @@ const menuOptions = computed<MenuOption[]>(() => [
         icon: renderIcon(DocumentTextOutline),
       },
       {
+        label: () => t('products'),
+        key: 'products',
+        icon: renderIcon(PricetagsOutline),
+      },
+      {
         label: () => t('settings.general'),
         key: 'settings-general',
         icon: renderIcon(CogOutline),
@@ -60,6 +65,7 @@ const activeKey = computed(() => {
   if (path.startsWith('/customers')) return 'customers';
   if (path.startsWith('/documents')) return 'documents';
   if (path.startsWith('/financial')) return 'financial';
+  if (path.startsWith('/products')) return 'products';
   if (path === '/settings/general') return 'settings-general';
   if (path.startsWith('/settings')) return 'settings';
   return 'dashboard';

@@ -28,9 +28,49 @@ export const SettingsViewTranslations = {
     'settings.currencySymbol': 'Currency Symbol',
     'settings.defaultTaxRate': 'Default Tax Rate (%)',
     'settings.defaultPaymentTerm': 'Default Payment Term (days)',
-    'settings.offerPrefix': 'Offer Number Prefix',
-    'settings.invoicePrefix': 'Invoice Number Prefix',
+    'settings.offerPrefix': 'Prefix',
+    'settings.invoicePrefix': 'Prefix',
     'settings.documentNumbering': 'Document Numbering',
+    // Numbering settings
+    'settings.numbering.invoiceTitle': 'Invoice Numbering',
+    'settings.numbering.offerTitle': 'Offer Numbering',
+    'settings.numbering.format': 'Number Format',
+    'settings.numbering.prefix': 'Prefix',
+    'settings.numbering.nextNumber': 'Next Number (Total)',
+    'settings.numbering.nextNumberYear': 'Next Number ({year})',
+    'settings.numbering.preview': 'Next will be',
+    'settings.numbering.invalidFormat': 'Invalid format',
+    'settings.numbering.help': 'Format Help',
+    'settings.numbering.helpText': `Use variables in your format template:
+• {PREFIX} - The prefix (INV, OFF)
+• {YEAR} - Full year (2026)
+• {YY} - Two-digit year (26)
+• {MONTH} - Month (01-12)
+• {DAY} - Day (01-31)
+• {NUMBER} - Total counter (all-time)
+• {NUMBER_YEAR} - Counter for current year
+
+Add padding with :N for zeros, e.g. {NUMBER:4} → 0042
+
+Examples:
+• {PREFIX}-{YEAR}-{NUMBER:4} → INV-2026-0042
+• {YY}.{NUMBER_YEAR:3} → 26.005
+• F{YEAR}/{NUMBER:5} → F2026/00042`,
+    'settings.numbering.var.PREFIX': 'Document prefix (e.g., INV)',
+    'settings.numbering.var.YEAR': 'Full year (e.g., 2026)',
+    'settings.numbering.var.YY': 'Two-digit year (e.g., 26)',
+    'settings.numbering.var.MONTH': 'Month (01-12)',
+    'settings.numbering.var.DAY': 'Day of month (01-31)',
+    'settings.numbering.var.NUMBER': 'Total counter (all-time)',
+    'settings.numbering.var.NUMBER_YEAR': 'Counter for current year only',
+    // Numbering presets
+    'settings.numbering.preset.yyNumberYear': 'Year + yearly number',
+    'settings.numbering.preset.numberOnly': 'Number only',
+    'settings.numbering.preset.yyMonthNumber': 'Year + month + number',
+    'settings.numbering.preset.prefixYearNumber': 'Prefix + year + number',
+    'settings.numbering.preset.yearSlashNumber': 'Year / number',
+    'settings.numbering.preset.dateNumber': 'Date + number',
+    'settings.numbering.preset.custom': 'Custom format',
     'settings.defaultTexts': 'Default Document Texts',
     'settings.defaultIntroText': 'Default Introduction Text',
     'settings.defaultIntroTextPlaceholder': 'This text appears at the top of every new document',
@@ -139,9 +179,49 @@ export const SettingsViewTranslations = {
     'settings.currencySymbol': 'Valutasymbool',
     'settings.defaultTaxRate': 'Standaard BTW-tarief (%)',
     'settings.defaultPaymentTerm': 'Standaard betalingstermijn (dagen)',
-    'settings.offerPrefix': 'Offertenummer voorvoegsel',
-    'settings.invoicePrefix': 'Factuurnummer voorvoegsel',
+    'settings.offerPrefix': 'Voorvoegsel',
+    'settings.invoicePrefix': 'Voorvoegsel',
     'settings.documentNumbering': 'Documentnummering',
+    // Numbering settings
+    'settings.numbering.invoiceTitle': 'Factuurnummering',
+    'settings.numbering.offerTitle': 'Offertenummering',
+    'settings.numbering.format': 'Nummerformaat',
+    'settings.numbering.prefix': 'Voorvoegsel',
+    'settings.numbering.nextNumber': 'Volgende nummer (totaal)',
+    'settings.numbering.nextNumberYear': 'Volgende nummer ({year})',
+    'settings.numbering.preview': 'Volgende wordt',
+    'settings.numbering.invalidFormat': 'Ongeldig formaat',
+    'settings.numbering.help': 'Formaat Hulp',
+    'settings.numbering.helpText': `Gebruik variabelen in je formaat template:
+• {PREFIX} - Het voorvoegsel (INV, OFF)
+• {YEAR} - Volledig jaar (2026)
+• {YY} - Tweecijferig jaar (26)
+• {MONTH} - Maand (01-12)
+• {DAY} - Dag (01-31)
+• {NUMBER} - Totale teller (alle tijd)
+• {NUMBER_YEAR} - Teller voor huidig jaar
+
+Voeg opvulling toe met :N voor nullen, bijv. {NUMBER:4} → 0042
+
+Voorbeelden:
+• {PREFIX}-{YEAR}-{NUMBER:4} → INV-2026-0042
+• {YY}.{NUMBER_YEAR:3} → 26.005
+• F{YEAR}/{NUMBER:5} → F2026/00042`,
+    'settings.numbering.var.PREFIX': 'Document voorvoegsel (bijv. INV)',
+    'settings.numbering.var.YEAR': 'Volledig jaar (bijv. 2026)',
+    'settings.numbering.var.YY': 'Tweecijferig jaar (bijv. 26)',
+    'settings.numbering.var.MONTH': 'Maand (01-12)',
+    'settings.numbering.var.DAY': 'Dag van de maand (01-31)',
+    'settings.numbering.var.NUMBER': 'Totale teller (alle tijd)',
+    'settings.numbering.var.NUMBER_YEAR': 'Teller voor alleen dit jaar',
+    // Numbering presets
+    'settings.numbering.preset.yyNumberYear': 'Jaar + jaarlijks nummer',
+    'settings.numbering.preset.numberOnly': 'Alleen nummer',
+    'settings.numbering.preset.yyMonthNumber': 'Jaar + maand + nummer',
+    'settings.numbering.preset.prefixYearNumber': 'Voorvoegsel + jaar + nummer',
+    'settings.numbering.preset.yearSlashNumber': 'Jaar / nummer',
+    'settings.numbering.preset.dateNumber': 'Datum + nummer',
+    'settings.numbering.preset.custom': 'Aangepast formaat',
     'settings.defaultTexts': 'Standaard Documentteksten',
     'settings.defaultIntroText': 'Standaard Introductietekst',
     'settings.defaultIntroTextPlaceholder': 'Deze tekst verschijnt bovenaan elk nieuw document',
