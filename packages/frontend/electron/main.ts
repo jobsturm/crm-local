@@ -313,7 +313,18 @@ ipcMain.handle(
 ipcMain.handle(
   'pdf:generate',
   async (_event, html: string, filePath: string): Promise<{ success: boolean; error?: string }> => {
+    const fs = await import('fs/promises');
+    const os = await import('os');
+    const path = await import('path');
+    
+    // Create a temporary HTML file - more reliable than data: URLs on Windows
+    const tempDir = os.tmpdir();
+    const tempHtmlPath = path.join(tempDir, `crm-pdf-${Date.now()}.html`);
+    
     try {
+      // Write HTML to temporary file
+      await fs.writeFile(tempHtmlPath, html, 'utf-8');
+      
       // Create a hidden window for PDF generation
       const pdfWindow = new BrowserWindow({
         show: false,
@@ -323,8 +334,8 @@ ipcMain.handle(
         },
       });
 
-      // Load the HTML content
-      await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      // Load the HTML from the temporary file
+      await pdfWindow.loadFile(tempHtmlPath);
 
       // Wait a bit for content to render
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -341,8 +352,7 @@ ipcMain.handle(
         },
       });
 
-      // Write to file
-      const fs = await import('fs/promises');
+      // Write PDF to file
       await fs.writeFile(filePath, pdfData);
 
       // Close the PDF window
@@ -354,6 +364,13 @@ ipcMain.handle(
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error generating PDF',
       };
+    } finally {
+      // Clean up temporary HTML file
+      try {
+        await fs.unlink(tempHtmlPath);
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   }
 );
