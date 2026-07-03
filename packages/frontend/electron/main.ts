@@ -204,6 +204,7 @@ function sendToRenderer(channel: string, data?: unknown) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
+    title: `Simpel CRM v${app.getVersion()}`,
     width: 1400,
     height: 900,
     minWidth: 1024,
