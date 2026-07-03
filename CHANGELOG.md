@@ -5,6 +5,13 @@ All notable changes to Simpel CRM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-03
+
+### Fixed
+- Fixed VAT/BTW calculation rounding to whole euros instead of cents (e.g. €284 instead of €283.76)
+- Added one-time migration to recalculate VAT amounts on all existing invoices and offers
+- Fixed newlines not being preserved in PDF intro, notes and footer text fields
+
 ## [1.2.1] - 2026-02-13
 
 ### Fixed
