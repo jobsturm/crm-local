@@ -43,6 +43,9 @@
             size="small"
             @click="revealUpdate"
           >
+            <template #icon>
+              <NIcon :component="FolderOpenOutline" />
+            </template>
             {{ t('update.showInFinder') }}
           </NButton>
           <NButton
@@ -80,7 +83,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { NAlert, NSpace, NText, NProgress, NButton } from 'naive-ui';
+import { NAlert, NSpace, NText, NProgress, NButton, NIcon } from 'naive-ui';
+import { FolderOpenOutline } from '@vicons/ionicons5';
 import { useI18n } from 'vue-i18n';
 import { useAutoUpdate } from '@/composables/useAutoUpdate';
 

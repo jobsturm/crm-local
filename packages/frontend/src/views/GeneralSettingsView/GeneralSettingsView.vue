@@ -21,7 +21,7 @@ import {
   useMessage,
   useDialog,
 } from 'naive-ui';
-import { SunnyOutline, MoonOutline, DesktopOutline, RefreshOutline, DownloadOutline, TrashOutline } from '@vicons/ionicons5';
+import { SunnyOutline, MoonOutline, DesktopOutline, RefreshOutline, DownloadOutline, TrashOutline, FolderOpenOutline } from '@vicons/ionicons5';
 import FlagIcon from '@/components/icons/FlagIcon.vue';
 import type { ThemePreference, LanguagePreference } from '@crm-local/shared';
 import { useSettingsStore } from '@/stores/settings';
@@ -347,6 +347,9 @@ onMounted(() => {
                 type="success"
                 @click="revealUpdate"
               >
+                <template #icon>
+                  <NIcon :component="FolderOpenOutline" />
+                </template>
                 {{ t('update.showInFinder') }}
               </NButton>
               <NButton
@@ -360,7 +363,7 @@ onMounted(() => {
           </NSpace>
 
           <!-- Download progress -->
-          <div v-if="isDownloading && updateProgress">
+          <NSpace v-if="isDownloading && updateProgress" vertical :size="4">
             <NText depth="3">{{ t('generalSettings.about.downloading') }}</NText>
             <NProgress
               type="line"
@@ -368,7 +371,7 @@ onMounted(() => {
               :indicator-placement="'inside'"
               processing
             />
-          </div>
+          </NSpace>
 
           <!-- Status messages -->
           <NAlert v-if="updateStatus === 'not-available'" type="success" :bordered="false">
@@ -383,9 +386,9 @@ onMounted(() => {
             {{ t('generalSettings.about.browserMode') }}
           </NAlert>
 
-          <NDivider style="margin: 8px 0;" />
+          <NDivider />
 
-          <NText depth="3" style="font-size: 13px;">
+          <NText depth="3" tag="small">
             {{ t('generalSettings.about.description') }}
           </NText>
         </NSpace>
