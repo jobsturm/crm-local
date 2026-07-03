@@ -5,6 +5,21 @@ All notable changes to Simpel CRM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-03
+
+### Added
+- **Auto-updates now work without paid code-signing certificates**
+  - Windows: unsigned NSIS updates install automatically via electron-updater
+  - macOS: new assisted-download flow — detects update, downloads DMG to ~/Downloads, and reveals in Finder for manual install
+  - Platform-aware update UI with correct buttons per OS ("Install & Restart" on Windows, "Show in Finder" on macOS)
+
+### Fixed
+- Replaced inline CSS styles with Naive UI component props in settings page (AGENTS.md compliance)
+- Added missing folder icon to "Show in Finder" button for visual consistency
+
+### Removed
+- Removed dead code-signing error detection UI (no longer needed with the new update flow)
+
 ## [1.2.2] - 2026-07-03
 
 ### Fixed
