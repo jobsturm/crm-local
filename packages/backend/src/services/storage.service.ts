@@ -17,6 +17,7 @@ import {
   listJsonFiles,
 } from '@crm-local/shared/utils';
 import { runMigrations, needsMigration } from '../migrations';
+import { migrateDocumentFile } from '../migrations/documents/recalculate-tax.js';
 
 export class StorageService {
   private databasePath: string;
@@ -67,6 +68,40 @@ export class StorageService {
         },
       };
       await this.saveDatabase();
+    }
+
+    await this.migrateDocumentFiles();
+  }
+
+  private async migrateDocumentFiles(): Promise<void> {
+    let scanned = 0;
+    let migrated = 0;
+    let failed = 0;
+
+    for (const basePath of [this.offersPath, this.invoicesPath]) {
+      const years = await listSubdirectories(basePath);
+      for (const year of years) {
+        const files = await listJsonFiles(join(basePath, year));
+        for (const filePath of files) {
+          scanned++;
+          try {
+            const result = await safeReadJsonFile<DocumentFileDto>(filePath);
+            if (!result.success) continue;
+            const { file: migratedFile, changed } = migrateDocumentFile(result.data);
+            if (changed) {
+              await writeJsonFile(filePath, migratedFile);
+              migrated++;
+            }
+          } catch (err) {
+            failed++;
+            console.error(`[document migration] Failed to migrate ${filePath}:`, err);
+          }
+        }
+      }
+    }
+
+    if (migrated > 0 || failed > 0) {
+      console.log(`[document migration] Scanned: ${scanned}, Migrated: ${migrated}, Failed: ${failed}`);
     }
   }
 

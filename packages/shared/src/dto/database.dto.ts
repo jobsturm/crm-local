@@ -71,7 +71,7 @@ export interface InvoiceFileDto {
 export const CURRENT_DATABASE_VERSION = '1.2.0';
 
 /** Current document file version */
-export const CURRENT_DOCUMENT_VERSION = '1.0.0';
+export const CURRENT_DOCUMENT_VERSION = '1.1.0';
 
 /** @deprecated Use CURRENT_DOCUMENT_VERSION */
 export const CURRENT_INVOICE_VERSION = '1.0.0';
