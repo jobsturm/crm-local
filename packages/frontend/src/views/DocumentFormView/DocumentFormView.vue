@@ -26,7 +26,7 @@ import {
 } from 'naive-ui';
 import { ArrowBackOutline, AddOutline, TrashOutline } from '@vicons/ionicons5';
 import type { CreateDocumentDto, DocumentType } from '@crm-local/shared';
-import { formatDocumentNumber, buildDocumentNumberVariables } from '@crm-local/shared';
+import { formatDocumentNumber, buildDocumentNumberVariables, calculateTax } from '@crm-local/shared';
 import { useDocumentStore } from '@/stores/documents';
 import { useCustomerStore } from '@/stores/customers';
 import { useSettingsStore } from '@/stores/settings';
@@ -161,9 +161,9 @@ const subtotal = computed(() =>
   formValue.value.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 );
 
-const taxAmount = computed(() => Math.round(subtotal.value * (formValue.value.taxRate / 100)));
-
-const total = computed(() => subtotal.value + taxAmount.value);
+const taxCalc = computed(() => calculateTax(subtotal.value, formValue.value.taxRate));
+const taxAmount = computed(() => taxCalc.value.taxAmount);
+const total = computed(() => taxCalc.value.total);
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('nl-NL', {

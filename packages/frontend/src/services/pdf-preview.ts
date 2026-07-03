@@ -5,7 +5,7 @@
  */
 
 import type { DocumentDto, BusinessDto, SettingsDto, DocumentLabelsDto, CurrencyCode } from '@crm-local/shared';
-import { DEFAULT_LABELS, formatDocumentNumber, buildDocumentNumberVariables, DEFAULT_INVOICE_NUMBER_FORMAT, DEFAULT_OFFER_NUMBER_FORMAT } from '@crm-local/shared';
+import { DEFAULT_LABELS, formatDocumentNumber, buildDocumentNumberVariables, DEFAULT_INVOICE_NUMBER_FORMAT, DEFAULT_OFFER_NUMBER_FORMAT, calculateTax } from '@crm-local/shared';
 import { generatePDFHTML } from './pdf-generator';
 
 /**
@@ -182,8 +182,8 @@ export function generatePreviewHTML(options: PreviewOptions = {}): string {
     taxRate: defaultTaxRate,
     paymentTermDays: defaultPaymentTermDays,
     // Recalculate tax and total based on new tax rate
-    taxAmount: baseDocument.subtotal * (defaultTaxRate / 100),
-    total: baseDocument.subtotal * (1 + defaultTaxRate / 100),
+    taxAmount: calculateTax(baseDocument.subtotal, defaultTaxRate).taxAmount,
+    total: calculateTax(baseDocument.subtotal, defaultTaxRate).total,
     // Use custom texts if provided
     introText: defaultIntroText ?? baseDocument.introText,
     notesText: defaultNotesText ?? baseDocument.notesText,
