@@ -9,6 +9,9 @@ export const updateTranslations = {
     'update.download': 'Download',
     'update.installNow': 'Install & Restart',
     'update.later': 'Later',
+    'update.readyToOpen': 'Version {version} has been downloaded to your Downloads folder.',
+    'update.showInFinder': 'Show in Finder',
+    'update.downloadingToDownloads': 'Downloading update to your Downloads folder...',
     'update.error': 'Update Error',
   },
   'nl-NL': {
@@ -21,6 +24,9 @@ export const updateTranslations = {
     'update.download': 'Downloaden',
     'update.installNow': 'Installeren & Herstarten',
     'update.later': 'Later',
+    'update.readyToOpen': 'Versie {version} is gedownload naar je Downloads-map.',
+    'update.showInFinder': 'Toon in Finder',
+    'update.downloadingToDownloads': 'Update wordt gedownload naar je Downloads-map...',
     'update.error': 'Update Fout',
   },
 };

@@ -5,7 +5,7 @@
  * and manages the bundled backend server.
  */
 
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +21,11 @@ app.disableHardwareAcceleration();
 let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let backendPort = 3456;
+
+// Auto-updater state
+let latestAvailableVersion: string | null = null;
+let activeDownloadItem: Electron.DownloadItem | null = null;
+let savedDmgPath: string | null = null;
 
 // ============================================================
 // Backend Server Management
@@ -118,7 +123,16 @@ autoUpdater.logger = console;
 
 // Don't auto-download, let user decide
 autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
+// Only auto-install on quit for Windows — macOS uses the assisted-download flow
+autoUpdater.autoInstallOnAppQuit = process.platform !== 'darwin';
+
+// We ship UNSIGNED builds (no paid Apple/Windows cert). electron-updater's
+// default Windows signature check would reject unsigned updates, so we override
+// it with a no-op that reports "valid". Trade-off: no defense against a
+// compromised GitHub release; mitigations are HTTPS transport + GitHub-only,
+// self-published releases. macOS never reaches this path (see assisted-download flow).
+// NOTE: assigning `false` is a silent no-op in electron-updater — it MUST be a function.
+(autoUpdater as unknown as { verifyUpdateCodeSignature: (publisherName: string[], path: string) => Promise<string | null> }).verifyUpdateCodeSignature = (_publisherName: string[], _path: string) => Promise.resolve(null);
 
 function setupAutoUpdater() {
   // Check for updates (only in production, and only if app-update.yml exists)
@@ -148,6 +162,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('update-available', (info) => {
+    latestAvailableVersion = info.version;
     sendToRenderer('updater:available', {
       version: info.version,
       releaseNotes: info.releaseNotes,
@@ -259,6 +274,84 @@ app.on('will-quit', () => {
 app.on('quit', () => {
   stopBackend();
 });
+
+// ============================================================
+// macOS Assisted-Download Flow
+// ============================================================
+
+async function downloadDmgForMac(version: string): Promise<void> {
+  if (!mainWindow) return;
+
+  const dmgUrl = `https://github.com/jobsturm/crm-local/releases/download/v${version}/Simpel-CRM-${version}-mac-universal.dmg`;
+  const downloadsDir = app.getPath('downloads');
+  const targetPath = join(downloadsDir, `Simpel-CRM-${version}-mac-universal.dmg`);
+
+  // HEAD-check: verify the DMG URL exists before downloading
+  try {
+    const { net } = await import('electron');
+    await new Promise<void>((resolve, reject) => {
+      const request = net.request({ method: 'HEAD', url: dmgUrl });
+      request.on('response', (response) => {
+        if (response.statusCode >= 200 && response.statusCode < 400) {
+          resolve();
+        } else {
+          reject(new Error(`DMG not found: HTTP ${response.statusCode}`));
+        }
+      });
+      request.on('error', reject);
+      request.end();
+    });
+  } catch (err) {
+    console.error('DMG HEAD-check failed, opening releases page:', err);
+    await shell.openExternal('https://github.com/jobsturm/crm-local/releases/latest');
+    sendToRenderer('updater:error', { message: 'Could not reach update file. Opening releases page in browser.' });
+    return;
+  }
+
+  const handleWillDownload = (_event: Electron.Event, item: Electron.DownloadItem) => {
+    if (!item.getURL().includes('mac-universal.dmg')) return;
+
+    item.setSavePath(targetPath);
+    activeDownloadItem = item;
+
+    item.on('updated', (_e, state) => {
+      if (state === 'progressing') {
+        const received = item.getReceivedBytes();
+        const total = item.getTotalBytes();
+        const percent = total > 0 ? (received / total) * 100 : 0;
+        sendToRenderer('updater:progress', {
+          percent,
+          bytesPerSecond: 0,
+          transferred: received,
+          total,
+        });
+      }
+    });
+
+    item.on('done', async (_e, state) => {
+      activeDownloadItem = null;
+      mainWindow?.webContents.session.removeListener('will-download', handleWillDownload);
+
+      if (state === 'completed') {
+        savedDmgPath = item.getSavePath();
+        sendToRenderer('updater:downloaded', { version, filePath: savedDmgPath });
+      } else if (state === 'cancelled') {
+        try {
+          const fs = await import('fs/promises');
+          await fs.unlink(targetPath);
+        } catch {
+          // File may not exist
+        }
+        sendToRenderer('updater:error', { message: 'Download cancelled.' });
+      } else {
+        sendToRenderer('updater:error', { message: 'Download was interrupted. Please try again.' });
+      }
+    });
+  };
+
+  mainWindow.webContents.session.on('will-download', handleWillDownload);
+  mainWindow.webContents.downloadURL(dmgUrl);
+}
 
 // ============================================================
 // IPC Handlers
@@ -392,11 +485,20 @@ ipcMain.handle('updater:check', async () => {
   }
 });
 
-// Download the update
+// Download the update (platform-branched)
 ipcMain.handle('updater:download', async () => {
   try {
-    await autoUpdater.downloadUpdate();
-    return { success: true };
+    if (process.platform === 'darwin') {
+      // macOS: manually download DMG to ~/Downloads (Squirrel.Mac cannot install unsigned builds)
+      if (!latestAvailableVersion) {
+        return { success: false, error: 'No update version available. Check for updates first.' };
+      }
+      void downloadDmgForMac(latestAvailableVersion);
+      return { success: true };
+    } else {
+      await autoUpdater.downloadUpdate();
+      return { success: true };
+    }
   } catch (error) {
     return {
       success: false,
@@ -405,9 +507,25 @@ ipcMain.handle('updater:download', async () => {
   }
 });
 
-// Install the update and restart
+// Install the update and restart (Windows only — macOS uses reveal flow)
 ipcMain.handle('updater:install', () => {
+  if (process.platform === 'darwin') {
+    return;
+  }
   autoUpdater.quitAndInstall(false, true);
+});
+
+ipcMain.handle('updater:reveal', () => {
+  if (savedDmgPath) {
+    shell.showItemInFolder(savedDmgPath);
+  }
+});
+
+ipcMain.handle('updater:cancel-download', async () => {
+  if (activeDownloadItem) {
+    activeDownloadItem.cancel();
+    activeDownloadItem = null;
+  }
 });
 
 // Get current app version

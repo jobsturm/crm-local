@@ -40,11 +40,13 @@ export function useAutoUpdate() {
   const progress = ref<UpdateProgress | null>(null);
   const error = ref<string | null>(null);
   const currentVersion = ref<string>('1.0.0');
+  const downloadedFilePath = ref<string | null>(null);
 
   const isElectron = computed(() => !!getElectronAPI());
   const hasUpdate = computed(() => status.value === 'available' || status.value === 'downloaded');
   const isDownloading = computed(() => status.value === 'downloading');
   const isReadyToInstall = computed(() => status.value === 'downloaded');
+  const isMac = computed(() => getElectronAPI()?.platform === 'darwin');
 
   // Event handlers
   const handleChecking = () => {
@@ -69,22 +71,16 @@ export function useAutoUpdate() {
 
   const handleDownloaded = (data: unknown) => {
     status.value = 'downloaded';
-    const info = data as { version: string };
-    updateInfo.value = { ...updateInfo.value, ...info };
+    const info = data as { version: string; filePath?: string };
+    updateInfo.value = { ...updateInfo.value, version: info.version };
+    downloadedFilePath.value = info.filePath ?? null;
     progress.value = null;
   };
 
   const handleError = (data: unknown) => {
     status.value = 'error';
     const err = data as { message: string };
-    // Detect code signing error and provide helpful message
-    if (err.message?.includes('code object is not signed') || 
-        err.message?.includes('signature') ||
-        err.message?.includes('Code signature')) {
-      error.value = 'CODE_SIGNING_ERROR';
-    } else {
-      error.value = err.message;
-    }
+    error.value = err.message;
   };
 
   // Setup event listeners
@@ -150,6 +146,18 @@ export function useAutoUpdate() {
     }
   }
 
+  function revealUpdate() {
+    const api = getElectronAPI();
+    if (!api) return;
+    api.revealUpdate();
+  }
+
+  function cancelDownload() {
+    const api = getElectronAPI();
+    if (!api) return;
+    api.cancelDownload();
+  }
+
   function installUpdate() {
     const api = getElectronAPI();
     if (!api) return;
@@ -158,8 +166,12 @@ export function useAutoUpdate() {
   }
 
   function dismissUpdate() {
+    if (isDownloading.value && isMac.value) {
+      cancelDownload();
+    }
     status.value = 'idle';
     updateInfo.value = null;
+    downloadedFilePath.value = null;
     progress.value = null;
     error.value = null;
   }
@@ -171,16 +183,20 @@ export function useAutoUpdate() {
     progress,
     error,
     currentVersion,
+    downloadedFilePath,
 
     // Computed
     isElectron,
     hasUpdate,
     isDownloading,
     isReadyToInstall,
+    isMac,
 
     // Actions
     checkForUpdates,
     downloadUpdate,
+    revealUpdate,
+    cancelDownload,
     installUpdate,
     dismissUpdate,
   };

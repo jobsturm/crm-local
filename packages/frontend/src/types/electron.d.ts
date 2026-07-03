@@ -50,6 +50,8 @@ interface ElectronAPI {
   }>;
   downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
   installUpdate: () => void;
+  revealUpdate: () => void;
+  cancelDownload: () => void;
   onUpdaterEvent: (event: string, callback: (data?: unknown) => void) => void;
   removeUpdaterListener: (event: string, callback: (data?: unknown) => void) => void;
 }

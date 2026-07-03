@@ -118,6 +118,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   /**
+   * Reveal the downloaded DMG in Finder (macOS only)
+   */
+  revealUpdate: (): void => {
+    void ipcRenderer.invoke('updater:reveal');
+  },
+
+  /**
+   * Cancel an in-progress macOS DMG download
+   */
+  cancelDownload: (): void => {
+    void ipcRenderer.invoke('updater:cancel-download');
+  },
+
+  /**
    * Listen for updater events
    */
   onUpdaterEvent: (event: string, callback: UpdaterEventCallback): void => {

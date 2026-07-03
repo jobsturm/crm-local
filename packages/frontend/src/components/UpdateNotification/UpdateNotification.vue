@@ -12,10 +12,10 @@
           {{ t('update.newVersionAvailable', { version: updateInfo?.version }) }}
         </NText>
         <NText v-else-if="status === 'downloading'">
-          {{ t('update.downloading') }}
+          {{ isMac ? t('update.downloadingToDownloads') : t('update.downloading') }}
         </NText>
         <NText v-else-if="status === 'downloaded'">
-          {{ t('update.readyToInstall', { version: updateInfo?.version }) }}
+          {{ isMac ? t('update.readyToOpen', { version: updateInfo?.version }) : t('update.readyToInstall', { version: updateInfo?.version }) }}
         </NText>
 
         <!-- Progress bar -->
@@ -36,6 +36,14 @@
             @click="downloadUpdate"
           >
             {{ t('update.download') }}
+          </NButton>
+          <NButton
+            v-else-if="status === 'downloaded' && isMac"
+            type="primary"
+            size="small"
+            @click="revealUpdate"
+          >
+            {{ t('update.showInFinder') }}
           </NButton>
           <NButton
             v-else-if="status === 'downloaded'"
@@ -85,8 +93,10 @@ const {
   hasUpdate,
   isDownloading,
   isReadyToInstall,
+  isMac,
   downloadUpdate,
   installUpdate,
+  revealUpdate,
   dismissUpdate,
 } = useAutoUpdate();
 
