@@ -410,7 +410,7 @@ const templateSource = `<!DOCTYPE html>
     {{#if document.introText}}
     <div class="intro-text">
         <div class="section-title">{{editable "introSectionLabel" labels.introSectionLabel}}</div>
-        {{editable "settings.defaultIntroText" document.introText}}
+        <span style="white-space: pre-wrap;">{{editable "settings.defaultIntroText" document.introText}}</span>
     </div>
     {{/if}}
 
@@ -453,14 +453,14 @@ const templateSource = `<!DOCTYPE html>
     {{#if document.notesText}}
     <div class="notes-text">
         <div class="section-title">{{editable "notesSectionLabel" labels.notesSectionLabel}}</div>
-        {{editable "settings.defaultNotesText" document.notesText}}
+        <span style="white-space: pre-wrap;">{{editable "settings.defaultNotesText" document.notesText}}</span>
     </div>
     {{/if}}
 
     {{#if document.footerText}}
     <div class="payment-info">
         <strong>{{#ifOffer}}{{editable "paymentTermsTitleOffer" labels.paymentTermsTitleOffer}}{{else}}{{editable "paymentTermsTitleInvoice" labels.paymentTermsTitleInvoice}}{{/ifOffer}}:</strong><br>
-        {{editable "settings.defaultFooterText" document.footerText}}
+        <span style="white-space: pre-wrap;">{{editable "settings.defaultFooterText" document.footerText}}</span>
     </div>
     {{/if}}
 
