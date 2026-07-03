@@ -28,3 +28,5 @@ export {
   type DocumentNumberVariables,
   type TemplateValidationResult,
 } from './document-number';
+
+export { roundCurrency, calculateTax } from './currency';

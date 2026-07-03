@@ -22,3 +22,6 @@ export {
   type DocumentNumberVariables,
   type TemplateValidationResult,
 } from './utils/document-number';
+
+// Currency utilities (browser-safe)
+export { roundCurrency, calculateTax } from './utils/currency';
