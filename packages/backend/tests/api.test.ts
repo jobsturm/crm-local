@@ -294,30 +294,52 @@ describe('CRM Backend API', () => {
       offerNumber = body.document.documentNumber;
     });
 
-    it('GET /api/documents - should list documents with filter', async () => {
-      // List all
-      let res = await request(app).get('/api/documents');
-      expect(res.status).toBe(200);
-      expect((res.body as DocumentListResponseDto).total).toBe(1);
+     it('POST /api/documents - should calculate VAT correctly with 2-decimal precision', async () => {
+       const offerData = {
+         documentType: 'offer',
+         customerId,
+         items: [{ description: 'Consulting Services', quantity: 1, unitPrice: 1351.25 }],
+         taxRate: 21,
+       };
 
-      // Filter by type
-      res = await request(app).get('/api/documents?type=offer');
-      expect(res.status).toBe(200);
-      expect((res.body as DocumentListResponseDto).total).toBe(1);
+       const res = await request(app)
+         .post('/api/documents')
+         .send(offerData)
+         .set('Content-Type', 'application/json');
 
-      res = await request(app).get('/api/documents?type=invoice');
-      expect(res.status).toBe(200);
-      expect((res.body as DocumentListResponseDto).total).toBe(0);
-    });
+       expect(res.status).toBe(201);
+       const body = res.body as DocumentResponseDto;
+       expect(body.document).toBeDefined();
+       expect(body.document.subtotal).toBe(1351.25);
+       expect(body.document.taxRate).toBe(21);
+       expect(body.document.taxAmount).toBe(283.76); // 1351.25 * 0.21 = 283.7625 → 283.76
+       expect(body.document.total).toBe(1635.01); // 1351.25 + 283.76
+     });
 
-    it('GET /api/documents/offers - should list offers only', async () => {
-      const res = await request(app).get('/api/documents/offers');
+     it('GET /api/documents - should list documents with filter', async () => {
+       // List all
+       let res = await request(app).get('/api/documents');
+       expect(res.status).toBe(200);
+       expect((res.body as DocumentListResponseDto).total).toBe(2);
 
-      expect(res.status).toBe(200);
-      const body = res.body as DocumentListResponseDto;
-      expect(body.total).toBe(1);
-      expect(body.documents[0].documentType).toBe('offer');
-    });
+       // Filter by type
+       res = await request(app).get('/api/documents?type=offer');
+       expect(res.status).toBe(200);
+       expect((res.body as DocumentListResponseDto).total).toBe(2);
+
+       res = await request(app).get('/api/documents?type=invoice');
+       expect(res.status).toBe(200);
+       expect((res.body as DocumentListResponseDto).total).toBe(0);
+     });
+
+     it('GET /api/documents/offers - should list offers only', async () => {
+       const res = await request(app).get('/api/documents/offers');
+
+       expect(res.status).toBe(200);
+       const body = res.body as DocumentListResponseDto;
+       expect(body.total).toBe(2);
+       expect(body.documents[0].documentType).toBe('offer');
+     });
 
     it('GET /api/documents/:id - should return document by ID', async () => {
       const res = await request(app).get(`/api/documents/${offerId}`);

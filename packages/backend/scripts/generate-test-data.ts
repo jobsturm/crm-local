@@ -17,7 +17,7 @@ import type {
   CustomerDto,
   DatabaseDto,
 } from '@crm-local/shared';
-import { createDocumentFile } from '@crm-local/shared';
+import { createDocumentFile, calculateTax } from '@crm-local/shared';
 import { writeJsonFile, safeReadJsonFile } from '@crm-local/shared/utils';
 
 // Configuration
@@ -226,8 +226,7 @@ function generateInvoice(
   const items = generateLineItems();
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount;
+  const { taxAmount, total } = calculateTax(subtotal, taxRate);
 
   const year = date.getFullYear();
   const documentNumber = `INV-${year}-${String(invoiceNumber).padStart(4, '0')}`;

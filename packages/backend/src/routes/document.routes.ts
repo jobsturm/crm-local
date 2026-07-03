@@ -28,6 +28,7 @@ import type {
   DocumentItemDto,
   SettingsDto,
 } from '@crm-local/shared';
+import { calculateTax } from '@crm-local/shared';
 import {
   formatDocumentNumber,
   buildDocumentNumberVariables,
@@ -255,8 +256,7 @@ export function createDocumentRoutes(storage: StorageService): Router {
 
         const subtotal = items.reduce((sum: number, item: DocumentItemDto) => sum + item.total, 0);
         const taxRate = data.taxRate ?? settings.defaultTaxRate;
-        const taxAmount = Math.round(subtotal * (taxRate / 100));
-        const total = subtotal + taxAmount;
+        const { taxAmount, total } = calculateTax(subtotal, taxRate);
 
         // Calculate due date
         const paymentTermDays = data.paymentTermDays ?? settings.defaultPaymentTermDays;
@@ -374,8 +374,7 @@ export function createDocumentRoutes(storage: StorageService): Router {
           }));
           subtotal = items.reduce((sum: number, item: DocumentItemDto) => sum + item.total, 0);
           const taxRate = data.taxRate ?? document.taxRate;
-          taxAmount = Math.round(subtotal * (taxRate / 100));
-          total = subtotal + taxAmount;
+          ({ taxAmount, total } = calculateTax(subtotal, taxRate));
         }
 
         // Recalculate due date if payment terms changed
