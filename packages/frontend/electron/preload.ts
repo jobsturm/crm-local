@@ -67,6 +67,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   /**
+   * Saves text content to a file
+   */
+  saveTextFile: (content: string, filePath: string): Promise<{ success: boolean; error?: string }> => {
+    return ipcRenderer.invoke('file:saveText', content, filePath);
+  },
+
+  /**
    * Get app version from main process
    */
   getVersion: (): Promise<string> => {

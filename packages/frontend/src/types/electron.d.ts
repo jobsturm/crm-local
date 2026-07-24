@@ -34,6 +34,9 @@ interface ElectronAPI {
   // PDF generation
   generatePDF: (html: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
 
+  // Text file saving (for UBL XML export)
+  saveTextFile: (content: string, filePath: string) => Promise<{ success: boolean; error?: string }>;
+
   // App info
   getVersion: () => Promise<string>;
   platform: NodeJS.Platform;

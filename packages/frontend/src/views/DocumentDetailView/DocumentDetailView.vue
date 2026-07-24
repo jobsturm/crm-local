@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, computed, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   NCard,
@@ -17,6 +17,9 @@ import {
   NTimeline,
   NTimelineItem,
   NSelect,
+  NModal,
+  NAlert,
+  NIcon,
   useMessage,
   useDialog,
   type DataTableColumns,
@@ -27,6 +30,8 @@ import {
   DownloadOutline,
   SwapHorizontalOutline,
   CreateOutline,
+  InformationCircleOutline,
+  CodeOutline,
 } from '@vicons/ionicons5';
 import type { DocumentItemDto, DocumentStatus } from '@crm-local/shared';
 import {
@@ -38,6 +43,12 @@ import { useI18n } from 'vue-i18n';
 import { useDocumentStore } from '@/stores/documents';
 import { useSettingsStore } from '@/stores/settings';
 import { generatePDF } from '@/services/pdf-generator';
+import {
+  validateForUbl,
+  generateUblXml,
+  saveXmlFile,
+  type UblValidationWarning,
+} from '@/services/ubl-generator';
 
 const route = useRoute();
 const router = useRouter();
@@ -201,6 +212,43 @@ async function handleDownloadPDF(): Promise<void> {
   }
 }
 
+// UBL export state
+const showUblExplainer = ref(false);
+const showUblWarnings = ref(false);
+const ublWarnings = ref<UblValidationWarning[]>([]);
+
+async function doExportUbl(): Promise<void> {
+  const doc = store.currentDocument;
+  if (!doc || !settingsStore.business || !settingsStore.settings) return;
+  try {
+    const xml = generateUblXml(doc, settingsStore.business, settingsStore.settings);
+    const biz = settingsStore.business;
+    const fileName = `${biz.name}_Invoice_${doc.customer.name}_${doc.documentNumber}_${doc.createdAt.slice(0, 10)}.xml`
+      .replace(/[/\\?%*:|"<>]/g, '-');
+    await saveXmlFile(xml, fileName);
+    message.success(t('ubl.success'));
+  } catch {
+    message.error(t('ubl.error'));
+  }
+}
+
+async function handleExportUbl(): Promise<void> {
+  const doc = store.currentDocument;
+  if (!doc || !settingsStore.business) return;
+  const warnings = validateForUbl(doc, settingsStore.business);
+  const blocker = warnings.find((w) => w.blocking);
+  if (blocker) {
+    message.error(t(blocker.i18nKey));
+    return;
+  }
+  if (warnings.length > 0) {
+    ublWarnings.value = warnings;
+    showUblWarnings.value = true;
+    return;
+  }
+  await doExportUbl();
+}
+
 function navigateToConvertedInvoice(): void {
   const invoiceId = store.currentDocument?.convertedToInvoiceId;
   if (invoiceId) {
@@ -293,6 +341,25 @@ watch(documentId, () => {
                   <DownloadOutline />
                 </template>
                 {{ t('downloadPDF') }}
+              </NButton>
+              <NButton
+                v-if="store.currentDocument.documentType === 'invoice'"
+                @click="handleExportUbl"
+              >
+                <template #icon>
+                  <CodeOutline />
+                </template>
+                {{ t('ubl.export') }}
+              </NButton>
+              <NButton
+                v-if="store.currentDocument.documentType === 'invoice'"
+                quaternary
+                circle
+                @click="showUblExplainer = true"
+              >
+                <template #icon>
+                  <NIcon><InformationCircleOutline /></NIcon>
+                </template>
               </NButton>
             </NButtonGroup>
           </NSpace>
@@ -424,5 +491,34 @@ watch(documentId, () => {
 
       <NEmpty v-else-if="!store.loading" :description="t('notFound')" />
     </NSpin>
+
+    <!-- UBL Explainer Modal -->
+    <NModal v-model:show="showUblExplainer" preset="card" :title="t('ubl.explainer.title')" :style="{ maxWidth: '560px' }">
+      <NSpace vertical :size="12">
+        <NText>{{ t('ubl.explainer.p1') }}</NText>
+        <NText>{{ t('ubl.explainer.p2') }}</NText>
+        <NText>{{ t('ubl.explainer.p3') }}</NText>
+        <NText depth="3">{{ t('ubl.explainer.p4') }}</NText>
+      </NSpace>
+    </NModal>
+
+    <!-- UBL Pre-flight Warnings Modal -->
+    <NModal v-model:show="showUblWarnings" preset="card" :title="t('ubl.warnings.title')" :style="{ maxWidth: '520px' }">
+      <NSpace vertical :size="12">
+        <NAlert
+          v-for="warning in ublWarnings"
+          :key="warning.field"
+          type="warning"
+        >
+          {{ t(warning.i18nKey) }}
+        </NAlert>
+        <NSpace justify="end" :size="8">
+          <NButton @click="showUblWarnings = false">{{ t('cancel') }}</NButton>
+          <NButton type="primary" @click="showUblWarnings = false; void doExportUbl()">
+            {{ t('ubl.exportAnyway') }}
+          </NButton>
+        </NSpace>
+      </NSpace>
+    </NModal>
   </NSpace>
 </template>

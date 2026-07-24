@@ -469,6 +469,23 @@ ipcMain.handle(
   }
 );
 
+// Save text file (for UBL XML export)
+ipcMain.handle(
+  'file:saveText',
+  async (_event, content: string, filePath: string): Promise<{ success: boolean; error?: string }> => {
+    const fs = await import('fs/promises');
+    try {
+      await fs.writeFile(filePath, content, 'utf-8');
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error saving file',
+      };
+    }
+  }
+);
+
 // ============================================================
 // Auto-Updater IPC Handlers
 // ============================================================
