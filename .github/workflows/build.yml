@@ -37,7 +37,9 @@ jobs:
         run: npm run build -w simpel-crm
 
       - name: Run tests
-        run: npm test -w @crm-local/backend || true
+        run: |
+          npm run test:run --workspace=@crm-local/backend
+          npm run test:run --workspace=simpel-crm
 
   # Build for macOS
   build-macos:

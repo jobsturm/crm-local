@@ -5,6 +5,13 @@ All notable changes to Simpel CRM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-24
+
+### Added
+- **UBL 2.1 e-invoice (XML) export** for invoices with in-app explainer (EN/NL)
+- **Automatic daily backups** with 30-backup rotation and Excel-compatible CSV exports, configurable backup location
+- Application now fully quits when the window is closed on all platforms (macOS fix)
+
 ## [1.3.1] - 2026-07-03
 
 ### Added
