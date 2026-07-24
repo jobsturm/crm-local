@@ -18,6 +18,7 @@ import {
   NTag,
   NProgress,
   NModal,
+  NCheckbox,
   useMessage,
   useDialog,
 } from 'naive-ui';
@@ -63,6 +64,16 @@ const resetConfirmationText = ref('');
 const isResetting = ref(false);
 const REQUIRED_CONFIRMATION = 'I want to reset';
 
+// Backup state
+const backupEnabled = ref(true);
+const useCustomBackupPath = ref(false);
+const customBackupPath = ref('');
+const backupCount = ref(0);
+const lastBackupTimestamp = ref<number | null>(null);
+const backupPath = ref('');
+const isBackingUp = ref(false);
+const backupValidationError = ref('');
+
 // Theme options with icons
 const themeOptions = computed(() => [
   { value: 'light' as ThemePreference, label: t('generalSettings.theme.light'), icon: SunnyOutline },
@@ -97,6 +108,19 @@ watch(
   (newLanguage) => {
     if (newLanguage && newLanguage !== locale.value) {
       locale.value = newLanguage;
+    }
+  },
+  { immediate: true }
+);
+
+// Sync backup settings from store
+watch(
+  () => store.settings,
+  (s) => {
+    if (s) {
+      backupEnabled.value = s.backupEnabled !== false;
+      useCustomBackupPath.value = s.useCustomBackupPath ?? false;
+      customBackupPath.value = s.customBackupPath ?? '';
     }
   },
   { immediate: true }
@@ -196,8 +220,109 @@ async function handleResetData() {
   }
 }
 
+async function loadBackupInfo() {
+  try {
+    const info = await api.getBackupInfo();
+    backupCount.value = info.backups.length;
+    lastBackupTimestamp.value = info.lastBackupTimestamp;
+    backupPath.value = info.backupPath;
+  } catch {
+    // Silently fail
+  }
+}
+
+async function handleBackupNow() {
+  isBackingUp.value = true;
+  try {
+    const result = await api.triggerBackup();
+    if (result.success) {
+      message.success(t('backup.nowSuccess'));
+      await loadBackupInfo();
+    } else {
+      message.error(t('backup.nowError'));
+    }
+  } catch {
+    message.error(t('backup.nowError'));
+  } finally {
+    isBackingUp.value = false;
+  }
+}
+
+async function handleBackupEnabledChange(value: boolean) {
+  backupEnabled.value = value;
+  try {
+    await store.updateSettings({ backupEnabled: value });
+  } catch {
+    // Revert on failure
+    backupEnabled.value = !value;
+  }
+}
+
+async function handleUseCustomPathChange(value: boolean) {
+  if (!value) {
+    useCustomBackupPath.value = false;
+    customBackupPath.value = '';
+    backupValidationError.value = '';
+    try {
+      await store.updateSettings({ useCustomBackupPath: false, customBackupPath: undefined });
+      await loadBackupInfo();
+    } catch {
+      // Silently fail
+    }
+    return;
+  }
+  useCustomBackupPath.value = true;
+}
+
+async function handleCustomPathSave() {
+  if (!customBackupPath.value) return;
+
+  backupValidationError.value = '';
+  const result = await api.validateBackupPath(customBackupPath.value);
+  if (!result.ok) {
+    backupValidationError.value = result.error === 'inside-storage'
+      ? t('backup.errorInsideStorage')
+      : t('backup.errorNotWritable');
+    return;
+  }
+
+  try {
+    await store.updateSettings({
+      useCustomBackupPath: true,
+      customBackupPath: customBackupPath.value,
+    });
+    await loadBackupInfo();
+  } catch {
+    // Silently fail
+  }
+}
+
+async function browseForBackupDirectory() {
+  if (!window.electronAPI?.selectDirectory) return;
+
+  try {
+    const result = await window.electronAPI.selectDirectory({
+      title: t('backup.choosePath'),
+      defaultPath: customBackupPath.value || undefined,
+    });
+
+    if (!result.canceled && result.filePath) {
+      customBackupPath.value = result.filePath;
+      await handleCustomPathSave();
+    }
+  } catch {
+    // Silently fail
+  }
+}
+
+function formatLastBackup(timestamp: number | null): string {
+  if (!timestamp) return t('backup.never');
+  return new Date(timestamp).toLocaleString();
+}
+
 onMounted(() => {
   void loadData();
+  void loadBackupInfo();
   hasElectron.value = !!window.electronAPI;
 });
 </script>
@@ -301,6 +426,64 @@ onMounted(() => {
               {{ t('settings.storage.changeButton') }}
             </NButton>
           </NSpace>
+        </NSpace>
+      </NCard>
+
+      <NDivider />
+
+      <!-- Backups Card -->
+      <NCard :title="t('backup.title')">
+        <NSpace vertical :size="16">
+          <NSpace align="center" justify="space-between">
+            <NText>{{ t('backup.enable') }}</NText>
+            <NSwitch :value="backupEnabled" @update:value="handleBackupEnabledChange" />
+          </NSpace>
+
+          <NDivider />
+
+          <NSpace align="center" justify="space-between">
+            <NSpace vertical :size="4">
+              <NText>{{ t('backup.lastBackup') }}: {{ formatLastBackup(lastBackupTimestamp) }}</NText>
+              <NText depth="3">{{ t('backup.count', { n: backupCount }) }}</NText>
+            </NSpace>
+            <NButton
+              type="primary"
+              :loading="isBackingUp"
+              :disabled="isBackingUp"
+              @click="handleBackupNow"
+            >
+              {{ t('backup.now') }}
+            </NButton>
+          </NSpace>
+
+          <NDivider />
+
+          <NCheckbox
+            :checked="useCustomBackupPath"
+            @update:checked="handleUseCustomPathChange"
+          >
+            {{ t('backup.useCustomPath') }}
+          </NCheckbox>
+
+          <NSpace v-if="useCustomBackupPath" vertical :size="8">
+            <NSpace :size="8" :wrap="false">
+              <NInput
+                v-model:value="customBackupPath"
+                :placeholder="backupPath"
+                @blur="handleCustomPathSave"
+              />
+              <NButton v-if="hasElectron" @click="browseForBackupDirectory">
+                {{ t('backup.choosePath') }}
+              </NButton>
+            </NSpace>
+            <NAlert v-if="backupValidationError" type="error" :bordered="false">
+              {{ backupValidationError }}
+            </NAlert>
+          </NSpace>
+
+          <NText depth="3" tag="small">
+            {{ t('backup.description') }}
+          </NText>
         </NSpace>
       </NCard>
 

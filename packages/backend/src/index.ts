@@ -13,34 +13,27 @@ import cors from 'cors';
 import { createRoutes } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { StorageService } from './services/storage.service.js';
+import { BackupService } from './services/backup.service.js';
 
-/**
- * Create the Express app with a given storage path.
- * Used for both production and testing.
- */
 export function createApp(storagePath: string): Express {
   const app = express();
 
-  // Middleware
   app.use(cors());
   app.use(express.json());
 
-  // Initialize storage service
   const storageService = new StorageService(storagePath);
+  const backupService = new BackupService(storageService);
 
-  // Routes
-  app.use('/api', createRoutes(storageService));
+  app.use('/api', createRoutes(storageService, backupService));
 
-  // Health check
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Error handler (must be last)
   app.use(errorHandler);
 
-  // Attach storage service for initialization
-  (app as Express & { storageService: StorageService }).storageService = storageService;
+  (app as Express & { storageService: StorageService; backupService: BackupService }).storageService = storageService;
+  (app as Express & { storageService: StorageService; backupService: BackupService }).backupService = backupService;
 
   return app;
 }
@@ -53,11 +46,11 @@ async function start(): Promise<void> {
   const storagePath = process.env.CRM_STORAGE_PATH ?? process.env.STORAGE_PATH ?? './data';
 
   const app = createApp(storagePath);
-  const storageService = (app as Express & { storageService: StorageService }).storageService;
+  const appWithServices = app as Express & { storageService: StorageService; backupService: BackupService };
 
   try {
-    // Initialize storage (create directories, load/create database)
-    await storageService.initialize();
+    await appWithServices.storageService.initialize();
+    appWithServices.backupService.start();
 
     app.listen(PORT, () => {
       console.log(`🚀 CRM Backend running on http://localhost:${PORT}`);

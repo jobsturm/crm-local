@@ -9,10 +9,12 @@ import cors from 'cors';
 import { createRoutes } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { StorageService } from './services/storage.service.js';
+import { BackupService } from './services/backup.service.js';
 import type { Server } from 'http';
 
 let server: Server | null = null;
 let storageService: StorageService | null = null;
+let backupService: BackupService | null = null;
 
 export interface StartServerOptions {
   port?: number;
@@ -41,22 +43,19 @@ export async function startServer(options: StartServerOptions): Promise<ServerIn
   app.use(cors());
   app.use(express.json());
 
-  // Initialize storage service
   storageService = new StorageService(storagePath);
+  backupService = new BackupService(storageService);
 
-  // Routes
-  app.use('/api', createRoutes(storageService));
+  app.use('/api', createRoutes(storageService, backupService));
 
-  // Health check
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Error handler (must be last)
   app.use(errorHandler);
 
-  // Initialize storage
   await storageService.initialize();
+  backupService.start();
 
   // Start server with port retry logic
   const tryListen = (tryPort: number, maxRetries: number): Promise<ServerInfo> => {
@@ -86,6 +85,9 @@ export async function startServer(options: StartServerOptions): Promise<ServerIn
  * Stop the backend server
  */
 export async function stopServer(): Promise<void> {
+  backupService?.stop();
+  backupService = null;
+
   return new Promise((resolve) => {
     if (server) {
       server.close(() => {
@@ -95,6 +97,7 @@ export async function stopServer(): Promise<void> {
         resolve();
       });
     } else {
+      storageService = null;
       resolve();
     }
   });

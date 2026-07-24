@@ -159,6 +159,17 @@ export interface SettingsDto {
   /** Fiscal year start month (1 = January, default for Netherlands) */
   fiscalYearStartMonth: FiscalYearStartMonth;
 
+  // === Backup Settings ===
+
+  /** Whether automatic backups are enabled */
+  backupEnabled?: boolean;
+
+  /** Whether to use a custom backup path instead of {storagePath}/backups */
+  useCustomBackupPath?: boolean;
+
+  /** Custom backup directory path (only used when useCustomBackupPath is true) */
+  customBackupPath?: string;
+
   /** Last updated timestamp */
   updatedAt: string; // ISO 8601 date string
 }
@@ -194,6 +205,11 @@ export interface UpdateSettingsDto {
   language?: LanguagePreference;
   dateFormat?: string;
   fiscalYearStartMonth?: FiscalYearStartMonth;
+
+  // Backup settings
+  backupEnabled?: boolean;
+  useCustomBackupPath?: boolean;
+  customBackupPath?: string;
 }
 
 /** DTO for settings response */
@@ -337,4 +353,8 @@ export const DEFAULT_SETTINGS: Omit<SettingsDto, 'storagePath' | 'updatedAt'> = 
   language: 'en-US',
   dateFormat: 'DD-MM-YYYY',
   fiscalYearStartMonth: 1, // January - default for Netherlands
+
+  // Backup settings
+  backupEnabled: true,
+  useCustomBackupPath: false,
 };

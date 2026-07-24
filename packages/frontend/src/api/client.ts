@@ -331,3 +331,38 @@ export async function updateProduct(id: string, data: UpdateProductDto): Promise
 export async function deleteProduct(id: string): Promise<void> {
   await request<undefined>(`/products/${id}`, { method: 'DELETE' });
 }
+
+// ============ Backup ============
+
+export interface BackupResult {
+  success: boolean;
+  path?: string;
+  timestamp?: string;
+  error?: string;
+}
+
+export interface BackupInfo {
+  backups: Array<{ timestamp: string; path: string }>;
+  lastBackupTimestamp: number | null;
+  backupPath: string;
+}
+
+export interface ValidatePathResult {
+  ok: boolean;
+  error?: 'not-writable' | 'inside-storage';
+}
+
+export async function triggerBackup(): Promise<BackupResult> {
+  return request<BackupResult>('/backup', { method: 'POST' });
+}
+
+export async function getBackupInfo(): Promise<BackupInfo> {
+  return request<BackupInfo>('/backup');
+}
+
+export async function validateBackupPath(path: string): Promise<ValidatePathResult> {
+  return request<ValidatePathResult>('/backup/validate-path', {
+    method: 'POST',
+    body: JSON.stringify({ path }),
+  });
+}
