@@ -92,6 +92,9 @@ export function createSettingsRoutes(storage: StorageService): Router {
           if (data.fiscalYearStartMonth !== undefined) {
             db.settings.fiscalYearStartMonth = data.fiscalYearStartMonth;
           }
+          if (data.backupEnabled !== undefined) db.settings.backupEnabled = data.backupEnabled;
+          if (data.useCustomBackupPath !== undefined) db.settings.useCustomBackupPath = data.useCustomBackupPath;
+          if (data.customBackupPath !== undefined) db.settings.customBackupPath = data.customBackupPath;
 
           // Merge labels if provided
           if (data.labels) {

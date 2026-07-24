@@ -1,4 +1,4 @@
-import { join, resolve, sep } from 'node:path';
+import { join, resolve, sep, dirname } from 'node:path';
 import { mkdir, rm, writeFile, access, constants, cp } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import type { CustomerDto, ProductDto, DocumentDto } from '@crm-local/shared';
@@ -20,7 +20,7 @@ export class BackupService {
   getBackupPath(): string {
     const db = this.storage.getDatabase();
     const settings = db.settings;
-    if (settings?.useCustomBackupPath && settings.customBackupPath) {
+    if (settings.useCustomBackupPath && settings.customBackupPath) {
       return settings.customBackupPath;
     }
     return join(this.storage.getStoragePath(), 'backups');
@@ -36,9 +36,19 @@ export class BackupService {
       return { ok: false, error: 'inside-storage' };
     }
     try {
-      await mkdir(resolvedPath, { recursive: true });
-      await access(resolvedPath, constants.W_OK);
-      return { ok: true };
+      if (existsSync(resolvedPath)) {
+        await access(resolvedPath, constants.W_OK);
+        return { ok: true };
+      }
+      let ancestor = dirname(resolvedPath);
+      while (ancestor !== dirname(ancestor)) {
+        if (existsSync(ancestor)) {
+          await access(ancestor, constants.W_OK);
+          return { ok: true };
+        }
+        ancestor = dirname(ancestor);
+      }
+      return { ok: false, error: 'not-writable' };
     } catch {
       return { ok: false, error: 'not-writable' };
     }
@@ -54,12 +64,12 @@ export class BackupService {
       const db = this.storage.getDatabase();
       const settings = db.settings;
 
-      if (!force && settings?.backupEnabled === false) {
+      if (!force && settings.backupEnabled === false) {
         return { success: false, error: 'disabled' };
       }
 
-      const customers = db.customers ?? [];
-      const products = db.products ?? [];
+      const customers = db.customers;
+      const products = db.products;
       const documents = await this.storage.listDocuments().catch(() => []);
       if (!force && customers.length === 0 && products.length === 0 && documents.length === 0) {
         return { success: false, error: 'empty' };
@@ -111,7 +121,7 @@ export class BackupService {
     const isoDate = (iso: string): string => iso.slice(0, 10);
 
     const customerRows = customers.map((c) => [
-      c.id, c.name, c.email, c.phone ?? '', c.company ?? '',
+      c.id, c.name, c.email, c.phone, c.company ?? '',
       c.address?.street ?? '', c.address?.city ?? '', c.address?.postalCode ?? '',
       c.address?.country ?? '', isoDate(c.createdAt),
     ]);
@@ -133,7 +143,7 @@ export class BackupService {
     const invoices = documents.filter((d) => d.documentType === 'invoice');
     const offers = documents.filter((d) => d.documentType === 'offer');
 
-    const docRow = (d: DocumentDto) => [
+    const docRow = (d: DocumentDto): (string | number)[] => [
       d.documentNumber, d.customer.name, d.status,
       money(d.subtotal), String(d.taxRate), money(d.taxAmount), money(d.total),
       isoDate(d.createdAt), isoDate(d.dueDate),

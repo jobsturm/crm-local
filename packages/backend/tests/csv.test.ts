@@ -43,4 +43,36 @@ describe('generateCsv', () => {
     const result = generateCsv(['a'], [['b'], ['c']]);
     expect(result).toContain('\r\n');
   });
+
+  it('prefixes formula-like strings starting with = to prevent injection', () => {
+    const result = generateCsv(['v'], [['=cmd']]);
+    expect(result).toContain("'=cmd");
+  });
+
+  it('prefixes formula-like strings starting with +', () => {
+    const result = generateCsv(['v'], [['+x']]);
+    expect(result).toContain("'+x");
+  });
+
+  it('prefixes formula-like strings starting with @', () => {
+    const result = generateCsv(['v'], [['@x']]);
+    expect(result).toContain("'@x");
+  });
+
+  it('leaves negative numbers like -12.50 intact', () => {
+    const result = generateCsv(['v'], [['-12.50']]);
+    expect(result).toContain('-12.50');
+    expect(result).not.toContain("'-12.50");
+  });
+
+  it('prefixes non-numeric strings starting with -', () => {
+    const result = generateCsv(['v'], [['-not-a-number']]);
+    expect(result).toContain("'-not-a-number");
+  });
+
+  it('leaves plain strings unchanged', () => {
+    const result = generateCsv(['v'], [['hello']]);
+    expect(result).toContain('hello');
+    expect(result).not.toContain("'hello");
+  });
 });

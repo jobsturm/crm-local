@@ -41,11 +41,11 @@
     "vue": "^3.5.0",
     "vue-echarts": "^8.0.1",
     "vue-i18n": "^9.14.5",
-    "vue-router": "^4.4.0",
-    "xmlbuilder2": "^4.0.3"
+    "vue-router": "^4.4.0"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
+    "xmlbuilder2": "^4.0.3",
     "@vitejs/plugin-vue": "^5.1.0",
     "electron": "32.2.6",
     "electron-builder": "^25.0.0",

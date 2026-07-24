@@ -109,6 +109,24 @@ describe('Backup System', () => {
     await rm(externalPath, { recursive: true, force: true });
   });
 
+  it('POST /api/backup/validate-path does not create the directory', async () => {
+    const externalPath = join(tmpdir(), `crm-no-create-${Date.now()}`);
+    await request(app).post('/api/backup/validate-path').send({ path: externalPath });
+    expect(existsSync(externalPath)).toBe(false);
+  });
+
+  it('PUT /api/settings persists backup settings', async () => {
+    await request(app)
+      .put('/api/settings')
+      .send({ backupEnabled: false, useCustomBackupPath: true, customBackupPath: '/tmp/x' })
+      .set('Content-Type', 'application/json');
+    const res = await request(app).get('/api/settings');
+    expect(res.status).toBe(200);
+    expect(res.body.settings.backupEnabled).toBe(false);
+    expect(res.body.settings.useCustomBackupPath).toBe(true);
+    expect(res.body.settings.customBackupPath).toBe('/tmp/x');
+  });
+
   it('concurrent runBackup calls: one succeeds, one returns in-progress', async () => {
     const [r1, r2] = await Promise.all([
       backupService.runBackup(true),

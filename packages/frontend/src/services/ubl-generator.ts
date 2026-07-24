@@ -1,4 +1,4 @@
-import { create } from 'xmlbuilder2';
+import { create } from './xml-builder';
 import type { DocumentDto, BusinessDto, SettingsDto } from '@crm-local/shared';
 import { toIso3166Alpha2 } from './ubl-country-codes';
 

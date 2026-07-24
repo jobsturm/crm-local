@@ -493,6 +493,7 @@ watch(documentId, () => {
     </NSpin>
 
     <!-- UBL Explainer Modal -->
+    <!-- Inline style is a documented workaround: NModal preset="card" has no width/max-width prop; per Naive UI docs, sizing card modals requires style (AGENTS.md exception: framework limitation) -->
     <NModal v-model:show="showUblExplainer" preset="card" :title="t('ubl.explainer.title')" :style="{ maxWidth: '560px' }">
       <NSpace vertical :size="12">
         <NText>{{ t('ubl.explainer.p1') }}</NText>
@@ -503,6 +504,7 @@ watch(documentId, () => {
     </NModal>
 
     <!-- UBL Pre-flight Warnings Modal -->
+    <!-- Inline style is a documented workaround: NModal preset="card" has no width/max-width prop; per Naive UI docs, sizing card modals requires style (AGENTS.md exception: framework limitation) -->
     <NModal v-model:show="showUblWarnings" preset="card" :title="t('ubl.warnings.title')" :style="{ maxWidth: '520px' }">
       <NSpace vertical :size="12">
         <NAlert
