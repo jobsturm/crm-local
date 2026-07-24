@@ -1,6 +1,6 @@
 {
   "name": "@crm-local/shared",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "Shared DTOs and utilities for CRM Local",
   "type": "module",
   "main": "./dist/index.js",
